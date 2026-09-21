@@ -524,17 +524,17 @@ const BASES = [
 
 const STATUS = {
   pendente:      { rotulo:'Criar OR',      icone:'clock', tecla:'1', ordem:0 },
-  em_tratamento: { rotulo:'Enviado para criar OR', icone:'play',  tecla:'2', ordem:1 },
+  em_tratamento: { rotulo:'Enviado para criar OR', icone:'clock',  tecla:'2', ordem:1 },
   tratado:       { rotulo:'OR criada',     icone:'check', tecla:'3', ordem:2 },
-  nao_procede:   { rotulo:'Elaborar medição', icone:'ban',   tecla:'4', ordem:3 },
+  nao_procede:   { rotulo:'Elaborar medição', icone:'play',   tecla:'4', ordem:3 },
 };
 const RESOLVIDOS = ['tratado', 'nao_procede'];
 
 const NOTAS_RAPIDAS = [
-  'Duplicidade confirmada',
-  'Endereço diferente, não é duplicidade',
-  'Aguardando retorno',
-  'Encaminhado ao campo',
+  'Enviado e-mail para criação de OR para a VIVO',
+  'Aguardando a VIVO retornar com a criação da OR',
+  'Na fila para ser enviado a VIVO para criar a OR',
+  'Não possui observação',
 ];
 
 /* =====================================================================
@@ -1006,7 +1006,7 @@ function itemHTML(g) {
       ${(estado || ors || novo || resp) ? `<span class="q-meta">${estado}${ors}${novo}${resp}</span>` : ''}
     </span>
     <span class="q-side">
-      ${g.linhas.length > 1 ? `<span class="q-count" title="Registros neste endereço">${g.linhas.length}×</span>` : ''}
+      ${g.linhas.length > 1 ? `<span class="q-count" title="Registros nesta TA">${g.linhas.length}×</span>` : ''}
       <span class="pill">${icon(st.icone, 12)}${st.rotulo}</span>
     </span>
   </button>`;
@@ -1063,18 +1063,18 @@ function renderDetalhe() {
       <div class="d-block">
         <label class="d-label" for="dResp">Responsável</label>
         <div class="resp-row">
-          <input id="dResp" class="input" value="${esc(t.responsavel || '')}" placeholder="Quem está tratando este endereço">
+          <input id="dResp" class="input" value="${esc(t.responsavel || '')}" placeholder="Qual é o operador que está tratando esta TA?">
           <button class="btn" data-act="assumir">Assumir</button>
         </div>
       </div>
       <div class="d-block">
         <label class="d-label" for="dObs">Observação</label>
-        <textarea id="dObs" class="input" rows="3" placeholder="O que foi feito ou o que falta">${esc(t.observacao || '')}</textarea>
+        <textarea id="dObs" class="input" rows="3" placeholder="Caso necessário, coloque em observação como está o andamento para a criação de OR desta TA.">${esc(t.observacao || '')}</textarea>
         <div class="quick">${NOTAS_RAPIDAS.map(n => `<button class="chip" data-act="nota" data-txt="${esc(n)}">${esc(n)}</button>`).join('')}</div>
       </div>
       <div class="d-records">
         <div class="d-records-head">
-          <h3>Registros neste endereço (${g.linhas.length})</h3>
+          <h3>Registros nesta TA (${g.linhas.length})</h3>
           ${g.ors.length ? `<button class="btn sm ghost" data-act="copiar-ors">${icon('copy', 14)}Copiar ORs</button>` : ''}
         </div>
         ${g.linhas.map(registroHTML).join('')}

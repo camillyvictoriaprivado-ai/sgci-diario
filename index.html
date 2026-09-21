@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SGCI | Central de tratativas</title>
+<title>SGCI + SIGITM | Central de ORs</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff5a00'/%3E%3Cpath d='M16 6a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z' fill='%23170e08'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -313,8 +313,8 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
       <div><div class="brand-name">SGCI</div><div class="brand-sub">SIGITM e SGCI</div></div>
     </div>
     <div>
-      <h1>Central de tratativas</h1>
-      <p>Trate os endereços repetidos do dia e consulte as bases SIGITM e SGCI em um só lugar.</p>
+      <h1>Central de ORs</h1>
+      <p>Trate as TAs do dia e consulte as bases SIGITM e SGCI em um só lugar.</p>
       <div id="loginStrip" class="strip demo" aria-hidden="true"></div>
     </div>
     <span></span>
@@ -341,11 +341,11 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   <aside class="side">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
-      <div><div class="brand-name">SGCI</div><div class="brand-sub">Central de tratativas</div></div>
+      <div><div class="brand-name">SGCI + SIGITM</div><div class="brand-sub">Central de ORs</div></div>
     </div>
     <nav class="nav">
       <div class="nav-label">Painel</div>
-      <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Endereços repetidos</span><span id="navBadge" class="badge" hidden></span></button>
+      <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -368,7 +368,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
     <section id="viewAcoes" class="view">
       <div class="page-head">
         <div>
-          <h1>Endereços repetidos</h1>
+          <h1>Painel de TAs para criar OR</h1>
           <p id="acSub">Carregando...</p>
         </div>
         <div class="head-actions">
@@ -398,15 +398,14 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div id="tabs" class="tabs" role="tablist" aria-label="Filtrar por situação"></div>
             <div class="filters">
               <div class="search"><i data-i="search" data-s="15"></i><input id="acBusca" class="input" type="search" placeholder="Buscar endereço, OR, bairro..." aria-label="Buscar"></div>
+              <select id="acUf" class="select" aria-label="UF" hidden></select>
+              <select id="acRepeticao" class="select" aria-label="Repetição">
+                <option value="todos">Todos</option>
+                <option value="repetidos">Repetidos</option>
+                <option value="nao_repetidos">Não repetidos</option>
+              </select>
               <select id="acCidade" class="select" aria-label="Município" hidden></select>
               <select id="acBairro" class="select" aria-label="Bairro" hidden></select>
-              <button id="acMeus" class="btn ghost" aria-pressed="false" title="Mostrar só os endereços em que você é o responsável">Só os meus</button>
-              <select id="acOrdem" class="select" aria-label="Ordenar">
-                <option value="prioridade">Prioridade</option>
-                <option value="repet">Mais repetidos</option>
-                <option value="recentes">Mais recentes</option>
-                <option value="az">Endereço A a Z</option>
-              </select>
             </div>
           </div>
           <div id="workspace" class="workspace">
@@ -516,18 +515,18 @@ const LS_MAPA  = 'sgci_mapa_colunas_v1';
 const LS_TEMA  = 'sgci_tema';
 
 const BASES = [
-  { id:'sigitm',            nome:'SIGITM',             desc:'Base completa ES e RS' },
-  { id:'sgci_mes_atual',    nome:'SGCI mês atual',     desc:'Mês atual e últimos 2 meses' },
-  { id:'sgci_ate_agosto',   nome:'SGCI até agosto',    desc:'Base até agosto/2026' },
-  { id:'codigos_de_servico',nome:'Códigos de serviço', desc:'SGCI, códigos de serviço' },
-  { id:'endereco_repetido_ext_sgtm', nome:'Endereço repetido (base bruta)', desc:'Todas as linhas da aba EXT SGTM' },
+  { id:'sigitm',            nome:'SIGITM - Base completa do ES e RJ',             desc:'Base completa ES e RS' },
+  { id:'sgci_mes_atual',    nome:'SGCI - Mês atual',     desc:'Mês atual e últimos 2 meses' },
+  { id:'sgci_ate_agosto',   nome:'SGCI - Até agosto/2026',    desc:'Base até agosto/2026' },
+  { id:'codigos_de_servico',nome:'Catálogo - Códigos de serviço', desc:'SGCI, códigos de serviço' },
+  { id:'endereco_repetido_ext_sgtm', nome:'Base diária extraída para criação de ORs', desc:'Todas as linhas da aba EXT SGTM' },
 ];
 
 const STATUS = {
-  pendente:      { rotulo:'Pendente',      icone:'clock', tecla:'1', ordem:0 },
-  em_tratamento: { rotulo:'Em tratamento', icone:'play',  tecla:'2', ordem:1 },
-  tratado:       { rotulo:'Tratado',       icone:'check', tecla:'3', ordem:2 },
-  nao_procede:   { rotulo:'Não procede',   icone:'ban',   tecla:'4', ordem:3 },
+  pendente:      { rotulo:'Criar OR',      icone:'clock', tecla:'1', ordem:0 },
+  em_tratamento: { rotulo:'Enviado para criar OR', icone:'play',  tecla:'2', ordem:1 },
+  tratado:       { rotulo:'OR criada',     icone:'check', tecla:'3', ordem:2 },
+  nao_procede:   { rotulo:'Elaborar medição', icone:'ban',   tecla:'4', ordem:3 },
 };
 const RESOLVIDOS = ['tratado', 'nao_procede'];
 
@@ -718,7 +717,7 @@ function irPara(view, base) {
    ===================================================================== */
 const A = {
   rows:[], cols:[], mapa:{}, grupos:[], porChave:new Map(), trat:{}, modoLocal:false,
-  filtro:'todos', busca:'', cidade:'', bairro:'', soMeus:false, ordem:'prioridade',
+  filtro:'todos', filtroRepetido:'todos', filtroUf:'todos', busca:'', cidade:'', bairro:'', soMeus:false, ordem:'az',
   sel:null, limite:120, lista:[], carregado:false, carregando:false, carregadoEm:null, erro:null, v:0,
 };
 
@@ -728,6 +727,9 @@ const PAPEIS = [
   { id:'numero',   rotulo:'Número do endereço', pats:[/^(numero|num|nro|nr|n)$/, /^(numero|num|nro|nr)_(do_|da_)?(end|endereco|imovel|casa|resid\w*|logradouro)$/, /^(end|endereco)_(numero|num|nro|nr)$/] },
   { id:'bairro',   rotulo:'Bairro', pats:[/^bairro$/, /bairro/] },
   { id:'cidade',   rotulo:'Município', pats:[/^(municipio|cidade)$/, /municipio/, /cidade/, /localidade/] },
+  { id:'uf',       rotulo:'UF', pats:[/^uf$/, /^uf_/, /(^|_)uf(_|$)/, /^estado$/, /estado/, /sigla_uf/, /uf_sigla/] },
+  { id:'ionix',    rotulo:'IONIX', pats:[/^ionix$/, /^ionix_/, /ionix/, /(^|_)ionix(_|$)/] },
+  { id:'material', rotulo:'Material', pats:[/^material$/, /^material_/, /material/, /^descricao_/, /nome_material/, /cod_material/, /codigo_material/, /material_descricao/, /produto/] },
   { id:'or',       rotulo:'Número da OR', pats:[/^(or|nr_or|num_or|numero_or|n_or|no_or|numero_da_or|nro_or)$/, /(^|_)or(_|$)/, /protocolo/, /ordem/] },
   { id:'data',     rotulo:'Data', pats:[/^data$/, /^dt_/, /(^|_)data(_|$)/, /(^|_)dt(_|$)/, /criacao/, /abertura/] },
 ];
@@ -791,33 +793,44 @@ async function carregarAcoes() {
 
 /* ---- agrupamento por endereço ---- */
 function chaveDe(r) {
-  const m = A.mapa;
-  if (m.endereco && normEnd(r[m.endereco])) {
-    return ['endereco', 'numero', 'bairro', 'cidade'].filter(p => m[p]).map(p => normEnd(r[m[p]])).filter(Boolean).join('|');
-  }
   return 'linha:' + hash(JSON.stringify(A.cols.map(c => r[c] ?? null)));
 }
+function chaveEndereco(r) {
+  const m = A.mapa;
+  const partes = ['endereco', 'numero', 'bairro', 'cidade', 'uf'].filter(p => m[p]).map(p => normEnd(r[m[p]])).filter(Boolean);
+  return partes.join('|') || chaveDe(r);
+}
 function montarGrupos() {
-  const m = A.mapa, mp = new Map();
+  const m = A.mapa;
+  const contagem = new Map();
   for (const r of A.rows) {
-    const ch = chaveDe(r);
-    let g = mp.get(ch);
-    if (!g) { g = { chave:ch, linhas:[] }; mp.set(ch, g); }
-    g.linhas.push(r);
+    const key = chaveEndereco(r);
+    contagem.set(key, (contagem.get(key) || 0) + 1);
   }
   const txt = (r, c) => c ? String(r[c] ?? '').trim() : '';
-  A.grupos = [...mp.values()].map(g => {
-    const r0 = g.linhas[0];
-    g.titulo = [txt(r0, m.endereco), txt(r0, m.numero)].filter(Boolean).join(', ')
-      || A.cols.map(c => txt(r0, c)).filter(Boolean).slice(0, 2).join(' - ') || `Registro ${r0.id}`;
-    g.bairro = txt(r0, m.bairro);
-    g.cidade = txt(r0, m.cidade);
-    g.sub = [g.bairro, g.cidade].filter(Boolean).join(', ');
-    g.ors = m.or ? [...new Set(g.linhas.map(r => txt(r, m.or)).filter(Boolean))] : [];
-    const tss = m.data ? g.linhas.map(r => parseData(r[m.data])).filter(x => x !== null) : [];
-    g.ts = tss.length ? Math.max(...tss) : null;
-    g.idMax = Math.max(...g.linhas.map(r => +r.id || 0));
-    g.busca = norm(g.linhas.map(r => A.cols.map(c => r[c] ?? '').join(' ')).join(' '));
+  A.grupos = A.rows.map(r => {
+    const ch = chaveDe(r);
+    const ionix = txt(r, m.ionix);
+    const endereco = [txt(r, m.endereco), txt(r, m.numero)].filter(Boolean).join(', ');
+    const uf = txt(r, m.uf);
+    const material = txt(r, m.material);
+    const g = {
+      chave: ch,
+      linhas:[r],
+      titulo: ionix || endereco || A.cols.map(c => txt(r, c)).filter(Boolean).slice(0, 2).join(' - ') || `Registro ${r.id}`,
+      enderecoTitulo: endereco || ionix || `Registro ${r.id}`,
+      ionix: ionix || null,
+      bairro: txt(r, m.bairro),
+      cidade: txt(r, m.cidade),
+      uf: uf || null,
+      material: material || null,
+      sub: [txt(r, m.bairro), txt(r, m.cidade), uf, material].filter(Boolean).join(' • '),
+      ors: m.or ? [txt(r, m.or)].filter(Boolean) : [],
+      ts: m.data ? parseData(r[m.data]) : null,
+      idMax: +r.id || 0,
+      busca: norm(A.cols.map(c => r[c] ?? '').join(' ')),
+      repetido: contagem.get(chaveEndereco(r)) > 1,
+    };
     return g;
   });
   A.porChave = new Map(A.grupos.map(g => [g.chave, g]));
@@ -838,6 +851,8 @@ function listaFiltrada({ ignorarStatus = false } = {}) {
   const l = A.grupos.filter(g => {
     const inf = infoStatus(g);
     if (!ignorarStatus && A.filtro !== 'todos' && inf.status !== A.filtro) return false;
+    if (A.filtroRepetido !== 'todos' && ((A.filtroRepetido === 'repetidos' && !g.repetido) || (A.filtroRepetido === 'nao_repetidos' && g.repetido))) return false;
+    if (A.filtroUf !== 'todos' && g.uf !== A.filtroUf) return false;
     if (A.cidade && g.cidade !== A.cidade) return false;
     if (A.bairro && g.bairro !== A.bairro) return false;
     if (A.soMeus && ((inf.t && inf.t.responsavel) || '') !== meu) return false;
@@ -935,7 +950,13 @@ function renderStrip() {
 
 function renderTabs() {
   const c = contagens();
-  const defs = [['todos', 'Todos', ''], ['pendente', 'Pendentes', 'pendente'], ['em_tratamento', 'Em tratamento', 'em_tratamento'], ['tratado', 'Tratados', 'tratado'], ['nao_procede', 'Não procede', 'nao_procede']];
+  const defs = [
+    ['todos', 'Todos', ''],
+    ['pendente', 'Criar OR', 'pendente'],
+    ['em_tratamento', 'Enviado para criar OR', 'em_tratamento'],
+    ['tratado', 'OR criada', 'tratado'],
+    ['nao_procede', 'Elaborar medição', 'nao_procede']
+  ];
   $('#tabs').innerHTML = defs.map(([k, t, s]) =>
     `<button class="tab${s ? ' st-' + s : ''}" role="tab" aria-selected="${A.filtro === k}" data-filtro="${k}">${s ? '<span class="dot"></span>' : ''}${t}<span class="n">${nfmt(c[k])}</span></button>`).join('');
 }
@@ -952,14 +973,18 @@ function opcoesSelect(sel, valores, atual, todos) {
   sel.innerHTML = `<option value="">${todos}</option>` + valores.map(v => `<option value="${esc(v)}"${v === atual ? ' selected' : ''}>${esc(v)}</option>`).join('');
 }
 function renderFiltros() {
-  const cidades = [...new Set(A.grupos.map(g => g.cidade).filter(Boolean))].sort(collator.compare);
+  const ufs = [...new Set(A.grupos.map(g => g.uf).filter(Boolean))].sort(collator.compare);
+  if (A.filtroUf && !ufs.includes(A.filtroUf)) A.filtroUf = 'todos';
+  const su = $('#acUf'); su.hidden = !(A.mapa.uf && ufs.length > 1); opcoesSelect(su, ufs, A.filtroUf, 'Todas as UFs');
+  const cidades = [...new Set(A.grupos.filter(g => A.filtroUf === 'todos' || g.uf === A.filtroUf).map(g => g.cidade).filter(Boolean))].sort(collator.compare);
   if (A.cidade && !cidades.includes(A.cidade)) A.cidade = '';
   const sc = $('#acCidade'); sc.hidden = !(A.mapa.cidade && cidades.length > 1); opcoesSelect(sc, cidades, A.cidade, 'Todos os municípios');
-  const bairros = [...new Set(A.grupos.filter(g => !A.cidade || g.cidade === A.cidade).map(g => g.bairro).filter(Boolean))].sort(collator.compare);
+  const bairros = [...new Set(A.grupos.filter(g => (A.filtroUf === 'todos' || g.uf === A.filtroUf) && (!A.cidade || g.cidade === A.cidade)).map(g => g.bairro).filter(Boolean))].sort(collator.compare);
   if (A.bairro && !bairros.includes(A.bairro)) A.bairro = '';
   const sbx = $('#acBairro'); sbx.hidden = !(A.mapa.bairro && bairros.length > 1); opcoesSelect(sbx, bairros, A.bairro, 'Todos os bairros');
-  $('#acOrdem').value = A.ordem;
-  $('#acMeus').setAttribute('aria-pressed', String(A.soMeus));
+  if (A.ordem !== 'az') A.ordem = 'az';
+  if ($('#acOrdem')) $('#acOrdem').value = A.ordem;
+  if ($('#acMeus')) $('#acMeus').setAttribute('aria-pressed', String(A.soMeus));
 }
 
 function itemHTML(g) {
@@ -967,12 +992,18 @@ function itemHTML(g) {
   const ors = g.ors.slice(0, 3).map(o => `<span class="tag">${esc(o)}</span>`).join('') + (g.ors.length > 3 ? `<span class="tag ghost">+${g.ors.length - 3}</span>` : '');
   const novo = inf.reaberto ? `<span class="tag warn">+${inf.novos} novo${inf.novos > 1 ? 's' : ''}</span>` : '';
   const resp = inf.t && inf.t.responsavel ? `<span class="tag ghost">${icon('user', 11)}${esc(inf.t.responsavel)}</span>` : '';
+  const estado = `<span class="tag ghost">${icon(st.icone, 11)}${esc(st.rotulo)}</span>`;
+  const ionixLinha = g.ionix ? `Ionix: ${g.ionix}` : null;
+  const ufLinha = g.uf ? `UF: ${g.uf}` : null;
+  const materialLinha = g.material ? `Material: ${g.material}` : null;
+  const linhasExtras = [ionixLinha, ufLinha, materialLinha].filter(Boolean);
   return `<button class="q-item st-${inf.status}${g.chave === A.sel ? ' sel' : ''}" data-chave="${esc(g.chave)}">
     <span class="q-bar"></span>
     <span class="q-main">
-      <span class="q-title">${esc(g.titulo)}</span>
+      <span class="q-title">${esc(g.ionix || g.titulo)}</span>
       ${g.sub ? `<span class="q-sub">${esc(g.sub)}</span>` : ''}
-      ${(ors || novo || resp) ? `<span class="q-meta">${ors}${novo}${resp}</span>` : ''}
+      ${linhasExtras.length ? `<span class="q-sub">${esc(linhasExtras.join(' • '))}</span>` : ''}
+      ${(estado || ors || novo || resp) ? `<span class="q-meta">${estado}${ors}${novo}${resp}</span>` : ''}
     </span>
     <span class="q-side">
       ${g.linhas.length > 1 ? `<span class="q-count" title="Registros neste endereço">${g.linhas.length}×</span>` : ''}
@@ -1215,7 +1246,7 @@ function acaoAcoes(nome, el) {
     case 'rechecar': rechecarBanco(); break;
     case 'mais': A.limite += 120; renderLista(); break;
     case 'limpar':
-      A.filtro = 'todos'; A.busca = ''; $('#acBusca').value = ''; A.cidade = ''; A.bairro = ''; A.soMeus = false;
+      A.filtro = 'todos'; A.filtroUf = 'todos'; A.busca = ''; $('#acBusca').value = ''; A.cidade = ''; A.bairro = ''; A.soMeus = false;
       renderFiltros(); refrescarFila(); break;
     case 'status': definirStatus(el.dataset.status); break;
     case 'assumir': assumir(); break;
@@ -1504,17 +1535,20 @@ function ligarEventos() {
 
   /* painel de ações */
   $('#viewAcoes').addEventListener('click', ev => {
-    const alvo = ev.target.closest('[data-act],[data-chave],[data-filtro]');
+    const alvo = ev.target.closest('[data-act],[data-chave],[data-filtro],[data-filtro-repetido]');
     if (!alvo) return;
     if (alvo.dataset.act) return acaoAcoes(alvo.dataset.act, alvo);
     if (alvo.dataset.chave) return alvo.classList.contains('tick') ? irParaGrupo(alvo.dataset.chave) : selecionar(alvo.dataset.chave);
     if (alvo.dataset.filtro) { A.filtro = alvo.dataset.filtro; A.limite = 120; refrescarFila(); }
+    if (alvo.dataset.filtroRepetido) { A.filtroRepetido = alvo.dataset.filtroRepetido; A.limite = 120; refrescarFila(); }
   });
   $('#acBusca').addEventListener('input', debounce(ev => { A.busca = ev.target.value; A.limite = 120; refrescarFila(); }, 150));
+  $('#acUf').onchange = ev => { A.filtroUf = ev.target.value; A.cidade = ''; A.bairro = ''; A.limite = 120; renderFiltros(); refrescarFila(); };
+  $('#acRepeticao').onchange = ev => { A.filtroRepetido = ev.target.value; A.limite = 120; refrescarFila(); };
   $('#acCidade').onchange = ev => { A.cidade = ev.target.value; A.bairro = ''; A.limite = 120; renderFiltros(); refrescarFila(); };
   $('#acBairro').onchange = ev => { A.bairro = ev.target.value; A.limite = 120; refrescarFila(); };
-  $('#acOrdem').onchange = ev => { A.ordem = ev.target.value; refrescarFila(); };
-  $('#acMeus').onclick = () => { A.soMeus = !A.soMeus; $('#acMeus').setAttribute('aria-pressed', String(A.soMeus)); A.limite = 120; refrescarFila(); };
+  if ($('#acOrdem')) $('#acOrdem').onchange = ev => { A.ordem = ev.target.value; refrescarFila(); };
+  if ($('#acMeus')) $('#acMeus').onclick = () => { A.soMeus = !A.soMeus; $('#acMeus').setAttribute('aria-pressed', String(A.soMeus)); A.limite = 120; refrescarFila(); };
 
   /* modal de colunas */
   $('#mdlColunas').addEventListener('click', ev => { if (ev.target === ev.currentTarget || ev.target.closest('[data-close]')) $('#mdlColunas').hidden = true; });

@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <style>
 :root{
@@ -235,6 +236,20 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 .pager .grp{display:flex;align-items:center;gap:8px}
 .pager .select{width:auto;height:30px}
 
+/* relatórios */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:8px 0 18px}
+.kpi-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px}
+.kpi-label{display:block;color:var(--muted);font-size:12.5px;font-weight:600}
+.kpi-value{display:block;font:800 26px/1.15 var(--font-display);letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi-sub{display:block;color:var(--faint);font-size:12px;margin-top:2px}
+#relCorpo{flex:1;min-height:0;overflow:auto}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding-bottom:28px}
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px}
+.chart-card h3{font:700 14.5px var(--font-display);letter-spacing:-.01em}
+.chart-wrap{position:relative;flex:1;min-height:230px}
+.chart-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+@media (max-width:900px){.charts-grid{grid-template-columns:1fr}}
+
 /* popover / modal / drawer / toast */
 .pop{position:fixed;z-index:95;width:290px;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow)}
 .pop-search{padding:8px}
@@ -346,6 +361,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
     <nav class="nav">
       <div class="nav-label">Painel</div>
       <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
+      <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>Relatórios</span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -412,6 +428,44 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div class="queue"><div id="acLista"></div></div>
             <aside id="detalhe" class="detail" aria-live="polite"></aside>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- Relatórios / gráficos ---- -->
+    <section id="viewRelatorios" class="view" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Relatórios e indicadores</h1>
+          <p id="relSub">Carregando...</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn" data-act-rel="atualizar"><i data-i="refresh"></i>Atualizar</button>
+        </div>
+      </div>
+      <div class="filters" style="padding:2px 0 16px">
+        <select id="relUf" class="select" aria-label="UF">
+          <option value="todos">Todas as UFs</option>
+          <option value="RJ">RJ</option>
+          <option value="ES">ES</option>
+        </select>
+        <select id="relBaseSgci" class="select" aria-label="Base do SGCI">
+          <option value="mes_atual">SGCI - Mês atual</option>
+          <option value="ate_agosto">SGCI - Até agosto</option>
+          <option value="ambas">SGCI - Todas as medições</option>
+        </select>
+      </div>
+      <div id="relEstado" class="state" hidden></div>
+      <div id="relCorpo" hidden>
+        <div id="relKpis" class="kpi-grid"></div>
+        <div class="charts-grid">
+          <div class="chart-card"><h3>Chamados SIGITM por mês</h3><div class="chart-wrap"><canvas id="chSigMes"></canvas></div></div>
+          <div class="chart-card"><h3>Chamados por status</h3><div class="chart-wrap"><canvas id="chSigStatus"></canvas></div></div>
+          <div class="chart-card"><h3>Top tipos de falha</h3><div class="chart-wrap"><canvas id="chSigFalha"></canvas></div></div>
+          <div class="chart-card"><h3>Chamados por UF</h3><div class="chart-wrap"><canvas id="chSigUf"></canvas></div></div>
+          <div class="chart-card"><h3>Valor pago por mês (SGCI)</h3><div class="chart-wrap"><canvas id="chSgciMes"></canvas></div></div>
+          <div class="chart-card"><h3>Top serviços por valor (SGCI)</h3><div class="chart-wrap"><canvas id="chSgciServico"></canvas></div></div>
+          <div class="chart-card"><h3>Fila de endereços por situação</h3><div class="chart-wrap"><canvas id="chEndStatus"></canvas></div></div>
         </div>
       </div>
     </section>
@@ -582,6 +636,8 @@ function parseData(v) {
   if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
   m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
   if (m) return Date.UTC(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2}))?$/);
+  if (m) return Date.UTC(2000 + (+m[3]), +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
   return null;
 }
 function fmtValor(v) {
@@ -621,6 +677,7 @@ const ICONS = {
   ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   'list-checks':'<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  'bar-chart':'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
   database:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   menu:'<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
   sliders:'<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
@@ -699,16 +756,18 @@ const meuNome = () => ((S.user && S.user.email) || '').split('@')[0] || 'eu';
 function irPara(view, base) {
   S.view = view;
   $('#viewAcoes').hidden = view !== 'acoes';
+  $('#viewRelatorios').hidden = view !== 'relatorios';
   $('#viewBase').hidden = view !== 'base';
   $$('.nav-item').forEach(b => {
-    const ativo = view === 'acoes' ? b.dataset.nav === 'acoes' : (b.dataset.nav === 'base' && b.dataset.base === base);
+    const ativo = view === 'base' ? (b.dataset.nav === 'base' && b.dataset.base === base) : b.dataset.nav === view;
     if (ativo) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   $('#app').classList.remove('nav-open');
   const meta = BASES.find(b => b.id === base);
-  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : (meta ? meta.nome : '');
+  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : view === 'relatorios' ? 'Relatórios' : (meta ? meta.nome : '');
   fecharPop(); fecharDrawer();
   if (view === 'acoes') { if (!A.carregado && !A.carregando) carregarAcoes(); }
+  else if (view === 'relatorios') { if (!R.carregado && !R.carregando) carregarRelatorios(); else renderRelatorios(); }
   else abrirBase(base);
 }
 
@@ -1444,12 +1503,307 @@ function exportarBase() {
 }
 
 /* =====================================================================
+   RELATÓRIOS: KPIs e gráficos (Chart.js), lendo direto do Supabase
+   ===================================================================== */
+const R = { carregado:false, carregando:false, carregadoEm:null, erro:null, uf:'todos', baseSgci:'mes_atual', charts:{}, dados:null };
+const MESES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const CORES_GRAFICO = ['#ff5a00','#5aa9ff','#34c98a','#f2b632','#9aa5bd','#c084fc','#ff6b6b','#33c2c2','#e879f9','#facc15'];
+const brl = v => v == null ? '—' : Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 });
+
+function canon(s) { return norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+function acharColuna(cols, regexes, excluir) {
+  const pares = cols.map(c => [c, canon(c)]);
+  for (const re of regexes) {
+    const achou = pares.find(([, can]) => re.test(can) && !(excluir && excluir.test(can)));
+    if (achou) return achou[0];
+  }
+  return null;
+}
+function rowsOf(id) { return (E.cache[id] && E.cache[id].rows) || []; }
+function colsOf(id) { return (E.cache[id] && E.cache[id].cols) || []; }
+
+function detectarSig(cols) {
+  return {
+    status: acharColuna(cols, [/^status$/]),
+    falha: acharColuna(cols, [/tipo_de_falha/, /^tipo_falha$/]),
+    uf: acharColuna(cols, [/^sigla_estado$/, /^uf$/]),
+    orCriada: acharColuna(cols, [/possui_or_no_sgci/], /atual/),
+    data: acharColuna(cols, [/^data_criacao$/, /^data_de_criacao$/]),
+  };
+}
+function detectarSgci(cols) {
+  return {
+    data: acharColuna(cols, [/medicao.*data.*criacao/]),
+    valor: acharColuna(cols, [/medicao.*valor.*pagar/]),
+    autorizado: acharColuna(cols, [/medicao.*autorizado/]),
+    servico: acharColuna(cols, [/servico_unitario.*descricao/]),
+    escritorio: acharColuna(cols, [/^escritorio$/]),
+  };
+}
+function detectarEndereco(cols) {
+  const base = detectarColunas(cols);
+  base.status = acharColuna(cols, [/status_endereco/, /^status$/]);
+  return base;
+}
+
+function chaveMes(ts) { const d = new Date(ts); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`; }
+function rotuloMes(chave) { const [a, m] = chave.split('-'); return `${MESES_ABREV[+m - 1]}/${a.slice(2)}`; }
+
+/* Só busca as colunas necessárias para os gráficos (bem mais leve que buscar a tabela inteira). */
+async function buscarColunasDisponiveis(tabela) {
+  const { data, error } = await sb.from(tabela).select('*').limit(1);
+  if (error) throw error;
+  return data && data.length ? Object.keys(data[0]) : [];
+}
+async function buscarSelecionado(tabela, colunas, onProgresso) {
+  const TAM = 1000;
+  const { count, error: eC } = await sb.from(tabela).select('id', { count:'exact', head:true });
+  if (eC) throw eC;
+  const total = count || 0;
+  if (!total) return [];
+  const campos = ['id', ...colunas.filter(c => c && c !== 'id')];
+  const sel = campos.join(',');
+  const paginas = Math.ceil(total / TAM);
+  const saida = new Array(paginas);
+  let proxima = 0, feitas = 0;
+  async function trabalhador() {
+    for (;;) {
+      const p = proxima++;
+      if (p >= paginas) return;
+      for (let tent = 1; ; tent++) {
+        const { data, error } = await sb.from(tabela).select(sel).order('id', { ascending:true }).range(p * TAM, (p + 1) * TAM - 1);
+        if (!error) { saida[p] = data || []; break; }
+        if (tent >= 3) throw error;
+        await new Promise(r => setTimeout(r, 600 * tent));
+      }
+      feitas++;
+      if (onProgresso) onProgresso(Math.min(feitas * TAM, total), total);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(4, paginas) }, trabalhador));
+  return saida.flat();
+}
+
+function linhasSigitmFiltradas() {
+  if (!R.dados) return { rows:[], c:{} };
+  const cs = R.dados.sigitm.c;
+  let rows = R.dados.sigitm.rows;
+  if (R.uf !== 'todos' && cs.uf) rows = rows.filter(r => String(r[cs.uf] ?? '').trim().toUpperCase() === R.uf);
+  return { rows, c: cs };
+}
+function linhasSgciFiltradas() {
+  if (!R.dados) return { rows:[], c:{} };
+  const usar = R.baseSgci === 'ambas' ? ['sgci_mes_atual', 'sgci_ate_agosto'] : [R.baseSgci === 'ate_agosto' ? 'sgci_ate_agosto' : 'sgci_mes_atual'];
+  let rows = [], cg = {};
+  for (const chave of usar) { const bloco = R.dados[chave]; if (bloco && bloco.rows.length) { rows = rows.concat(bloco.rows); if (!Object.keys(cg).length) cg = bloco.c; } }
+  if (!Object.keys(cg).length && R.dados.sgci_mes_atual) cg = R.dados.sgci_mes_atual.c;
+  if (R.uf !== 'todos' && cg.escritorio) rows = rows.filter(r => String(r[cg.escritorio] ?? '').trim().toUpperCase().endsWith(R.uf));
+  return { rows, c: cg };
+}
+
+function contagemPorColuna(rows, col, limite = 8) {
+  if (!col) return { labels:[], valores:[] };
+  const mapa = new Map();
+  for (const r of rows) { const v = String(r[col] ?? '').trim() || '(vazio)'; mapa.set(v, (mapa.get(v) || 0) + 1); }
+  const entradas = [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  const top = entradas.slice(0, limite), resto = entradas.slice(limite).reduce((s, [, n]) => s + n, 0);
+  if (resto) top.push(['Outros', resto]);
+  return { labels: top.map(x => x[0]), valores: top.map(x => x[1]) };
+}
+function somaPorColuna(rows, colGrupo, colValor, limite = 8) {
+  if (!colGrupo || !colValor) return { labels:[], valores:[] };
+  const mapa = new Map();
+  for (const r of rows) { const v = String(r[colGrupo] ?? '').trim() || '(vazio)'; mapa.set(v, (mapa.get(v) || 0) + (Number(r[colValor]) || 0)); }
+  const entradas = [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  const top = entradas.slice(0, limite), resto = entradas.slice(limite).reduce((s, [, n]) => s + n, 0);
+  if (resto) top.push(['Outros', resto]);
+  return { labels: top.map(x => x[0]), valores: top.map(x => Math.round(x[1])) };
+}
+function serieMensal(rows, colData, colValor) {
+  const mapa = new Map();
+  for (const r of rows) {
+    const ts = colData ? parseData(r[colData]) : null;
+    if (ts == null) continue;
+    const k = chaveMes(ts);
+    mapa.set(k, (mapa.get(k) || 0) + (colValor ? (Number(r[colValor]) || 0) : 1));
+  }
+  const chaves = [...mapa.keys()].sort();
+  return { labels: chaves.map(rotuloMes), valores: chaves.map(k => Math.round(mapa.get(k) * 100) / 100) };
+}
+
+/* Descobre as colunas de cada tabela (1 linha só) e baixa apenas os campos usados nos gráficos/KPIs. */
+async function carregarRelatorios(forcar) {
+  if (R.carregando) return;
+  R.carregando = true; R.erro = null; renderRelatorios();
+  try {
+    if (forcar) R.dados = null;
+    if (!R.dados) {
+      const progresso = {};
+      const atualizarProgresso = (rotuloBase, n, t) => {
+        progresso[rotuloBase] = `${rotuloBase}: ${nfmt(n)}/${nfmt(t)}`;
+        const el = $('#relEstado');
+        if (el) el.innerHTML = estadoCarregando('Carregando dados dos relatórios...<br><span class="muted">' + Object.values(progresso).join(' · ') + '</span>');
+      };
+
+      const colsSig = await buscarColunasDisponiveis('sigitm');
+      const cSig = detectarSig(colsSig);
+      const colsSgciMes = await buscarColunasDisponiveis('sgci_mes_atual');
+      const cSgciMes = detectarSgci(colsSgciMes);
+      const colsSgciAgo = await buscarColunasDisponiveis('sgci_ate_agosto');
+      const cSgciAgo = detectarSgci(colsSgciAgo);
+      const colsEnd = await buscarColunasDisponiveis(T_ENDERECOS);
+      const cEnd = detectarEndereco(colsEnd);
+
+      const necSig = Object.values(cSig).filter(Boolean);
+      const necSgciMes = Object.values(cSgciMes).filter(Boolean);
+      const necSgciAgo = Object.values(cSgciAgo).filter(Boolean);
+      const necEnd = [cEnd.status].filter(Boolean);
+
+      const [sig, sgciMes, sgciAgo, end] = await Promise.all([
+        buscarSelecionado('sigitm', necSig, (n, t) => atualizarProgresso('SIGITM', n, t)),
+        buscarSelecionado('sgci_mes_atual', necSgciMes, (n, t) => atualizarProgresso('SGCI mês atual', n, t)),
+        buscarSelecionado('sgci_ate_agosto', necSgciAgo, (n, t) => atualizarProgresso('SGCI até agosto', n, t)),
+        buscarSelecionado(T_ENDERECOS, necEnd, (n, t) => atualizarProgresso('Endereços', n, t)),
+      ]);
+
+      R.dados = {
+        sigitm: { rows: sig, c: cSig },
+        sgci_mes_atual: { rows: sgciMes, c: cSgciMes },
+        sgci_ate_agosto: { rows: sgciAgo, c: cSgciAgo },
+        endereco: { rows: end, c: cEnd },
+      };
+    }
+    R.carregado = true; R.carregadoEm = new Date();
+  } catch (e) { console.error('Erro ao carregar relatórios:', e); R.erro = e; R.carregado = false; }
+  R.carregando = false; renderRelatorios();
+}
+
+function calcularKpis() {
+  const { rows: sig, c: cs } = linhasSigitmFiltradas();
+  const totalSig = sig.length;
+  const semOr = cs.orCriada ? sig.filter(r => /nao possui/.test(norm(String(r[cs.orCriada] ?? '')))).length : null;
+  const fechados = cs.status ? sig.filter(r => /fechado/i.test(String(r[cs.status] ?? ''))).length : null;
+
+  const { rows: sgci, c: cg } = linhasSgciFiltradas();
+  const totalMed = sgci.length;
+  const valorPago = cg.valor ? sgci.reduce((s, r) => s + (Number(r[cg.valor]) || 0), 0) : null;
+  const ticketMedio = (valorPago != null && totalMed) ? valorPago / totalMed : null;
+
+  const endRows = (R.dados && R.dados.endereco.rows) || [], ce = (R.dados && R.dados.endereco.c) || {};
+  const totalEnd = endRows.length;
+  const repetidos = ce.status ? endRows.filter(r => norm(String(r[ce.status] ?? '')) === 'repetido').length : null;
+
+  return { totalSig, semOr, fechados, totalMed, valorPago, ticketMedio, totalEnd, repetidos };
+}
+
+function corTema() {
+  const cs = getComputedStyle(document.documentElement);
+  return { texto: cs.getPropertyValue('--muted').trim() || '#93a1bd', linha: cs.getPropertyValue('--line-soft').trim() || '#1b2843' };
+}
+function montarGrafico(id, tipo, labels, valores, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el || !window.Chart) return;
+  if (R.charts[id]) R.charts[id].destroy();
+  const t = corTema();
+  const horizontal = !!opts.horizontal;
+  R.charts[id] = new Chart(el, {
+    type: tipo,
+    data: { labels, datasets: [{
+      data: valores,
+      backgroundColor: tipo === 'doughnut' ? labels.map((_, i) => CORES_GRAFICO[i % CORES_GRAFICO.length]) : (opts.cor || '#5aa9ff'),
+      borderRadius: tipo === 'bar' ? 6 : 0,
+      borderWidth: tipo === 'doughnut' ? 2 : 0,
+      borderColor: tipo === 'doughnut' ? (document.documentElement.getAttribute('data-theme') === 'light' ? '#ffffff' : '#121c31') : 'transparent',
+      maxBarThickness: 34,
+    }] },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: tipo === 'doughnut', position:'bottom', labels:{ color:t.texto, boxWidth:10, font:{ size:11 } } },
+        tooltip: { callbacks: opts.moeda ? { label: c => ` ${brl(c.parsed.x ?? c.parsed.y ?? c.parsed)}` } : undefined },
+      },
+      scales: tipo === 'doughnut' ? {} : {
+        x: { ticks:{ color:t.texto, font:{ size:11 } }, grid:{ display: !horizontal, color:t.linha } },
+        y: { ticks:{ color:t.texto, font:{ size:11 } }, grid:{ display: horizontal, color:t.linha } },
+      },
+    },
+  });
+}
+
+function kpiCardHTML(label, valor, sub) {
+  return `<div class="kpi-card"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${valor}</span>${sub ? `<span class="kpi-sub">${esc(sub)}</span>` : ''}</div>`;
+}
+function pct(n, total) { return total ? `${Math.round(n / total * 100)}% do total` : ''; }
+
+function renderRelatorios() {
+  const est = $('#relEstado'), corpo = $('#relCorpo');
+  if (R.erro) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = `<div class="empty">${icon('alert', 28)}<h3>Não consegui carregar os relatórios</h3>
+      <p>${tabelaInexistente(R.erro) ? 'Alguma das bases (SIGITM, SGCI ou endereços) ainda não existe no Supabase. Rode o setup_supabase.sql e envie o Excel.' : esc(msgErro(R.erro))}</p>
+      <button class="btn primary" data-act-rel="atualizar">${icon('refresh')}Tentar de novo</button></div>`;
+    return;
+  }
+  if (!R.carregado) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = estadoCarregando('Carregando dados dos relatórios...');
+    return;
+  }
+  if (!window.Chart) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = `<div class="empty">${icon('alert', 28)}<h3>Biblioteca de gráficos não carregou</h3><p>Verifique a conexão com a internet e recarregue a página.</p></div>`;
+    return;
+  }
+  est.hidden = true; corpo.hidden = false;
+  $('#relSub').textContent = `Atualizado às ${pad(R.carregadoEm.getHours())}:${pad(R.carregadoEm.getMinutes())}`;
+
+  const k = calcularKpis();
+  $('#relKpis').innerHTML = [
+    kpiCardHTML('Chamados SIGITM', nfmt(k.totalSig)),
+    kpiCardHTML('Sem OR criada', k.semOr == null ? '—' : nfmt(k.semOr), pct(k.semOr, k.totalSig)),
+    kpiCardHTML('Chamados fechados', k.fechados == null ? '—' : nfmt(k.fechados), pct(k.fechados, k.totalSig)),
+    kpiCardHTML('Medições SGCI', nfmt(k.totalMed)),
+    kpiCardHTML('Valor pago', brl(k.valorPago)),
+    kpiCardHTML('Ticket médio', brl(k.ticketMedio)),
+    kpiCardHTML('Endereços na fila', nfmt(k.totalEnd)),
+    kpiCardHTML('Endereços repetidos', k.repetidos == null ? '—' : nfmt(k.repetidos), pct(k.repetidos, k.totalEnd)),
+  ].join('');
+
+  const { rows: sig, c: cs } = linhasSigitmFiltradas();
+  const { rows: sgci, c: cg } = linhasSgciFiltradas();
+  const endRows = (R.dados && R.dados.endereco.rows) || [], ce = (R.dados && R.dados.endereco.c) || {};
+
+  const m1 = serieMensal(sig, cs.data, null);
+  montarGrafico('chSigMes', 'bar', m1.labels, m1.valores, { cor:'#5aa9ff' });
+
+  const m2 = contagemPorColuna(sig, cs.status, 6);
+  montarGrafico('chSigStatus', 'doughnut', m2.labels, m2.valores);
+
+  const m3 = contagemPorColuna(sig, cs.falha, 8);
+  montarGrafico('chSigFalha', 'bar', m3.labels, m3.valores, { cor:'#ff5a00', horizontal:true });
+
+  const m4 = contagemPorColuna(sig, cs.uf, 6);
+  montarGrafico('chSigUf', 'doughnut', m4.labels, m4.valores);
+
+  const m5 = serieMensal(sgci, cg.data, cg.valor);
+  montarGrafico('chSgciMes', 'bar', m5.labels, m5.valores, { cor:'#34c98a', moeda:true });
+
+  const m6 = somaPorColuna(sgci, cg.servico, cg.valor, 8);
+  montarGrafico('chSgciServico', 'bar', m6.labels, m6.valores, { cor:'#f2b632', horizontal:true, moeda:true });
+
+  const m7 = contagemPorColuna(endRows, ce.status, 6);
+  montarGrafico('chEndStatus', 'doughnut', m7.labels, m7.valores);
+}
+
+/* =====================================================================
    Autenticação
    ===================================================================== */
 function mostrarLogin() {
   S.user = null;
   $('#app').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
+  R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
   E.cache = {}; E.pend = {}; E.tabela = null;
   fecharPop(); fecharDrawer();
 }
@@ -1516,9 +1870,11 @@ function montarFaixaLogin() {
 
 function ligarEventos() {
   /* navegação */
-  $('#nav' in {} ? '' : '.nav').addEventListener('click', ev => {
+  $('.nav').addEventListener('click', ev => {
     const b = ev.target.closest('.nav-item'); if (!b) return;
-    b.dataset.nav === 'acoes' ? irPara('acoes') : irPara('base', b.dataset.base);
+    if (b.dataset.nav === 'acoes') irPara('acoes');
+    else if (b.dataset.nav === 'relatorios') irPara('relatorios');
+    else irPara('base', b.dataset.base);
   });
   $('#btnMenu').onclick = () => $('#app').classList.add('nav-open');
   $('#scrim').onclick = () => $('#app').classList.remove('nav-open');
@@ -1526,6 +1882,7 @@ function ligarEventos() {
   $('#btnTema').onclick = () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     store.set(LS_TEMA, t); aplicarTema(t);
+    if (S.view === 'relatorios' && R.carregado) renderRelatorios();
   };
 
   /* login */
@@ -1549,6 +1906,14 @@ function ligarEventos() {
   $('#acBairro').onchange = ev => { A.bairro = ev.target.value; A.limite = 120; refrescarFila(); };
   if ($('#acOrdem')) $('#acOrdem').onchange = ev => { A.ordem = ev.target.value; refrescarFila(); };
   if ($('#acMeus')) $('#acMeus').onclick = () => { A.soMeus = !A.soMeus; $('#acMeus').setAttribute('aria-pressed', String(A.soMeus)); A.limite = 120; refrescarFila(); };
+
+  /* relatórios */
+  $('#viewRelatorios').addEventListener('click', ev => {
+    const alvo = ev.target.closest('[data-act-rel]'); if (!alvo) return;
+    if (alvo.dataset.actRel === 'atualizar') carregarRelatorios(true);
+  });
+  $('#relUf').onchange = ev => { R.uf = ev.target.value; if (R.carregado) renderRelatorios(); };
+  $('#relBaseSgci').onchange = ev => { R.baseSgci = ev.target.value; if (R.carregado) renderRelatorios(); };
 
   /* modal de colunas */
   $('#mdlColunas').addEventListener('click', ev => { if (ev.target === ev.currentTarget || ev.target.closest('[data-close]')) $('#mdlColunas').hidden = true; });

@@ -245,6 +245,10 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 #relCorpo{flex:1;min-height:0;overflow:auto}
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding-bottom:28px}
 .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px}
+.chart-card.wide{grid-column:1/-1}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap}
+.chart-legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600}
+.chart-legend i{width:10px;height:10px;border-radius:3px;flex:none}
 .chart-card h3{font:700 14.5px var(--font-display);letter-spacing:-.01em}
 .chart-wrap{position:relative;flex:1;min-height:230px}
 .chart-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
@@ -349,6 +353,57 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   </div>
 </div>
 
+<!-- ============ ESCOLHA DE ESTADO ============ -->
+<div id="estadoSelect" class="login" hidden>
+  <div class="login-art">
+    <div class="brand">
+      <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
+      <div><div class="brand-name">SGCI</div><div class="brand-sub">SIGITM e SGCI</div></div>
+    </div>
+    <div>
+      <h1>Qual estado você vai tratar?</h1>
+      <p>Escolha a região para carregar os dados corretos.</p>
+    </div>
+    <span></span>
+  </div>
+  <div class="login-form-wrap">
+    <div class="login-form">
+      <div>
+        <h2>Escolher estado</h2>
+        <p class="muted" style="margin-top:6px">Você pode trocar de estado depois de entrar.</p>
+      </div>
+      <button class="btn primary block" type="button" data-estado="RJ-ES" style="height:46px;justify-content:flex-start;padding:0 16px">RJ – ES</button>
+      <button class="btn block" type="button" data-estado="SC" style="height:46px;justify-content:flex-start;padding:0 16px">SC</button>
+      <button id="estadoSair" class="link" type="button" style="justify-self:start">Sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SC (EM BREVE) ============ -->
+<div id="scVazio" class="login" hidden>
+  <div class="login-art">
+    <div class="brand">
+      <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
+      <div><div class="brand-name">SGCI</div><div class="brand-sub">SIGITM e SGCI</div></div>
+    </div>
+    <div>
+      <h1>SC</h1>
+      <p>A base de SC ainda está sendo estruturada.</p>
+    </div>
+    <span></span>
+  </div>
+  <div class="login-form-wrap">
+    <div class="login-form">
+      <div>
+        <h2>Em breve</h2>
+        <p class="muted" style="margin-top:6px">Ainda não há nada por aqui para SC.</p>
+      </div>
+      <button id="scTrocarEstado" class="btn block" type="button" style="height:42px">Trocar estado</button>
+      <button id="scSair" class="link" type="button" style="justify-self:start">Sair</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ APP ============ -->
 <div id="app" class="app" hidden>
   <div id="scrim" class="scrim"></div>
@@ -361,7 +416,6 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
     <nav class="nav">
       <div class="nav-label">Painel</div>
       <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
-      <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>Relatórios</span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -428,44 +482,6 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div class="queue"><div id="acLista"></div></div>
             <aside id="detalhe" class="detail" aria-live="polite"></aside>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---- Relatórios / gráficos ---- -->
-    <section id="viewRelatorios" class="view" hidden>
-      <div class="page-head">
-        <div>
-          <h1>Relatórios e indicadores</h1>
-          <p id="relSub">Carregando...</p>
-        </div>
-        <div class="head-actions">
-          <button class="btn" data-act-rel="atualizar"><i data-i="refresh"></i>Atualizar</button>
-        </div>
-      </div>
-      <div class="filters" style="padding:2px 0 16px">
-        <select id="relUf" class="select" aria-label="UF">
-          <option value="todos">Todas as UFs</option>
-          <option value="RJ">RJ</option>
-          <option value="ES">ES</option>
-        </select>
-        <select id="relBaseSgci" class="select" aria-label="Base do SGCI">
-          <option value="mes_atual">SGCI - Mês atual</option>
-          <option value="ate_agosto">SGCI - Até agosto</option>
-          <option value="ambas">SGCI - Todas as medições</option>
-        </select>
-      </div>
-      <div id="relEstado" class="state" hidden></div>
-      <div id="relCorpo" hidden>
-        <div id="relKpis" class="kpi-grid"></div>
-        <div class="charts-grid">
-          <div class="chart-card"><h3>Chamados SIGITM por mês</h3><div class="chart-wrap"><canvas id="chSigMes"></canvas></div></div>
-          <div class="chart-card"><h3>Chamados por status</h3><div class="chart-wrap"><canvas id="chSigStatus"></canvas></div></div>
-          <div class="chart-card"><h3>Top tipos de falha</h3><div class="chart-wrap"><canvas id="chSigFalha"></canvas></div></div>
-          <div class="chart-card"><h3>Chamados por UF</h3><div class="chart-wrap"><canvas id="chSigUf"></canvas></div></div>
-          <div class="chart-card"><h3>Valor pago por mês (SGCI)</h3><div class="chart-wrap"><canvas id="chSgciMes"></canvas></div></div>
-          <div class="chart-card"><h3>Top serviços por valor (SGCI)</h3><div class="chart-wrap"><canvas id="chSgciServico"></canvas></div></div>
-          <div class="chart-card"><h3>Fila de endereços por situação</h3><div class="chart-wrap"><canvas id="chEndStatus"></canvas></div></div>
         </div>
       </div>
     </section>
@@ -750,13 +766,12 @@ async function buscarTudo(tabela, onProgresso) {
 /* =====================================================================
    Estado global e navegação
    ===================================================================== */
-const S = { user:null, view:'acoes' };
+const S = { user:null, view:'acoes', estado:null };
 const meuNome = () => ((S.user && S.user.email) || '').split('@')[0] || 'eu';
 
 function irPara(view, base) {
   S.view = view;
   $('#viewAcoes').hidden = view !== 'acoes';
-  $('#viewRelatorios').hidden = view !== 'relatorios';
   $('#viewBase').hidden = view !== 'base';
   $$('.nav-item').forEach(b => {
     const ativo = view === 'base' ? (b.dataset.nav === 'base' && b.dataset.base === base) : b.dataset.nav === view;
@@ -764,10 +779,9 @@ function irPara(view, base) {
   });
   $('#app').classList.remove('nav-open');
   const meta = BASES.find(b => b.id === base);
-  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : view === 'relatorios' ? 'Relatórios' : (meta ? meta.nome : '');
+  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : (meta ? meta.nome : '');
   fecharPop(); fecharDrawer();
   if (view === 'acoes') { if (!A.carregado && !A.carregando) carregarAcoes(); }
-  else if (view === 'relatorios') { if (!R.carregado && !R.carregando) carregarRelatorios(); else renderRelatorios(); }
   else abrirBase(base);
 }
 
@@ -1051,7 +1065,6 @@ function itemHTML(g) {
   const ors = g.ors.slice(0, 3).map(o => `<span class="tag">${esc(o)}</span>`).join('') + (g.ors.length > 3 ? `<span class="tag ghost">+${g.ors.length - 3}</span>` : '');
   const novo = inf.reaberto ? `<span class="tag warn">+${inf.novos} novo${inf.novos > 1 ? 's' : ''}</span>` : '';
   const resp = inf.t && inf.t.responsavel ? `<span class="tag ghost">${icon('user', 11)}${esc(inf.t.responsavel)}</span>` : '';
-  const estado = `<span class="tag ghost">${icon(st.icone, 11)}${esc(st.rotulo)}</span>`;
   const ionixLinha = g.ionix ? `Ionix: ${g.ionix}` : null;
   const ufLinha = g.uf ? `UF: ${g.uf}` : null;
   const materialLinha = g.material ? `Material: ${g.material}` : null;
@@ -1062,7 +1075,7 @@ function itemHTML(g) {
       <span class="q-title">${esc(g.ionix || g.titulo)}</span>
       ${g.sub ? `<span class="q-sub">${esc(g.sub)}</span>` : ''}
       ${linhasExtras.length ? `<span class="q-sub">${esc(linhasExtras.join(' • '))}</span>` : ''}
-      ${(estado || ors || novo || resp) ? `<span class="q-meta">${estado}${ors}${novo}${resp}</span>` : ''}
+      ${(ors || novo || resp) ? `<span class="q-meta">${ors}${novo}${resp}</span>` : ''}
     </span>
     <span class="q-side">
       ${g.linhas.length > 1 ? `<span class="q-count" title="Registros nesta TA">${g.linhas.length}×</span>` : ''}
@@ -1505,12 +1518,24 @@ function exportarBase() {
 /* =====================================================================
    RELATÓRIOS: KPIs e gráficos (Chart.js), lendo direto do Supabase
    ===================================================================== */
-const R = { carregado:false, carregando:false, carregadoEm:null, erro:null, uf:'todos', baseSgci:'mes_atual', charts:{}, dados:null };
+const R = { carregado:false, carregando:false, carregadoEm:null, erro:null, uf:'todos', baseSgci:'mes_atual', ano:'todos', anos:[], raiz:'todos', baixaDefeito:null, baixaDefeitoValores:[], charts:{}, dados:null };
 const MESES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const CORES_GRAFICO = ['#ff5a00','#5aa9ff','#34c98a','#f2b632','#9aa5bd','#c084fc','#ff6b6b','#33c2c2','#e879f9','#facc15'];
 const brl = v => v == null ? '—' : Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 });
 
 function canon(s) { return norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+/* Converte letra de coluna de planilha (A, B, ..., J, ...) para o nome real da coluna no Supabase.
+   Assume que a tabela tem "id" como coluna extra (não faz parte da planilha original) e que as
+   demais colunas preservam a ordem original das colunas da planilha (A, B, C, ...). */
+function letraParaIndice(letra) {
+  let n = 0;
+  for (const ch of String(letra).toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+function colunaPorLetra(cols, letra) {
+  const semId = cols.filter(c => c !== 'id');
+  return semId[letraParaIndice(letra)] || null;
+}
 function acharColuna(cols, regexes, excluir) {
   const pares = cols.map(c => [c, canon(c)]);
   for (const re of regexes) {
@@ -1529,6 +1554,9 @@ function detectarSig(cols) {
     uf: acharColuna(cols, [/^sigla_estado$/, /^uf$/]),
     orCriada: acharColuna(cols, [/possui_or_no_sgci/], /atual/),
     data: acharColuna(cols, [/^data_criacao$/, /^data_de_criacao$/]),
+    dataMedicao: acharColuna(cols, [/^data_medicao$/, /data_medicao/]),
+    raiz: acharColuna(cols, [/^raiz$/]),
+    baixaDefeito: acharColuna(cols, [/^baixa_defeito$/, /baixa_defeito/]),
   };
 }
 function detectarSgci(cols) {
@@ -1538,6 +1566,7 @@ function detectarSgci(cols) {
     autorizado: acharColuna(cols, [/medicao.*autorizado/]),
     servico: acharColuna(cols, [/servico_unitario.*descricao/]),
     escritorio: acharColuna(cols, [/^escritorio$/]),
+    orCriada: colunaPorLetra(cols, 'J'),
   };
 }
 function detectarEndereco(cols) {
@@ -1584,11 +1613,29 @@ async function buscarSelecionado(tabela, colunas, onProgresso) {
   return saida.flat();
 }
 
+/* filtra linhas pelo ano selecionado em R.ano, usando a coluna de data informada */
+function filtrarPorAno(rows, col) {
+  if (R.ano === 'todos' || !col) return rows;
+  return rows.filter(r => { const ts = parseData(r[col]); if (ts == null) return false; return new Date(ts).getUTCFullYear() === +R.ano; });
+}
+/* filtra linhas do SIGITM pelos filtros de Raiz e Baixa defeito */
+function filtrarPorRaizEBaixa(rows, cs) {
+  let out = rows;
+  if (R.raiz !== 'todos' && cs.raiz) {
+    out = out.filter(r => { const v = r[cs.raiz]; const tem = v !== null && v !== undefined && String(v).trim() !== ''; return R.raiz === 'com' ? tem : !tem; });
+  }
+  if (R.baixaDefeito && cs.baixaDefeito) {
+    out = out.filter(r => R.baixaDefeito.has(String(r[cs.baixaDefeito] ?? '').trim()));
+  }
+  return out;
+}
 function linhasSigitmFiltradas() {
   if (!R.dados) return { rows:[], c:{} };
   const cs = R.dados.sigitm.c;
   let rows = R.dados.sigitm.rows;
   if (R.uf !== 'todos' && cs.uf) rows = rows.filter(r => String(r[cs.uf] ?? '').trim().toUpperCase() === R.uf);
+  rows = filtrarPorAno(rows, cs.data);
+  rows = filtrarPorRaizEBaixa(rows, cs);
   return { rows, c: cs };
 }
 function linhasSgciFiltradas() {
@@ -1598,7 +1645,42 @@ function linhasSgciFiltradas() {
   for (const chave of usar) { const bloco = R.dados[chave]; if (bloco && bloco.rows.length) { rows = rows.concat(bloco.rows); if (!Object.keys(cg).length) cg = bloco.c; } }
   if (!Object.keys(cg).length && R.dados.sgci_mes_atual) cg = R.dados.sgci_mes_atual.c;
   if (R.uf !== 'todos' && cg.escritorio) rows = rows.filter(r => String(r[cg.escritorio] ?? '').trim().toUpperCase().endsWith(R.uf));
+  rows = filtrarPorAno(rows, cg.data);
   return { rows, c: cg };
+}
+/* linhas do(s) SGCI (respeitando o filtro de base) usadas para contar "ORs criadas",
+   pela coluna J da planilha (mapeada em c.orCriada) */
+function linhasOrCriadaFiltradas() {
+  if (!R.dados) return { rows:[], col:null };
+  const usar = R.baseSgci === 'ambas' ? ['sgci_mes_atual', 'sgci_ate_agosto'] : [R.baseSgci === 'ate_agosto' ? 'sgci_ate_agosto' : 'sgci_mes_atual'];
+  let rows = [], cg = {};
+  for (const chave of usar) { const bloco = R.dados[chave]; if (bloco && bloco.rows.length) { rows = rows.concat(bloco.rows); if (!Object.keys(cg).length) cg = bloco.c; } }
+  if (!Object.keys(cg).length && R.dados.sgci_mes_atual) cg = R.dados.sgci_mes_atual.c;
+  if (R.uf !== 'todos' && cg.escritorio) rows = rows.filter(r => String(r[cg.escritorio] ?? '').trim().toUpperCase().endsWith(R.uf));
+  rows = filtrarPorAno(rows, cg.orCriada);
+  return { rows, col: cg.orCriada };
+}
+/* anos disponíveis nos dados carregados (SIGITM + SGCI, incluindo a coluna J), para popular o filtro de ano */
+function anosDisponiveis() {
+  if (!R.dados) return [];
+  const anos = new Set();
+  const coletar = (rows, col) => { if (!col) return; for (const r of rows) { const ts = parseData(r[col]); if (ts != null) anos.add(new Date(ts).getUTCFullYear()); } };
+  coletar(R.dados.sigitm.rows, R.dados.sigitm.c.data);
+  for (const chave of ['sgci_mes_atual', 'sgci_ate_agosto']) {
+    const bloco = R.dados[chave]; if (!bloco) continue;
+    coletar(bloco.rows, bloco.c.data);
+    coletar(bloco.rows, bloco.c.orCriada);
+  }
+  return [...anos].sort((a, b) => b - a);
+}
+/* valores distintos da coluna baixa_defeito (SIGITM), para popular o filtro */
+function baixaDefeitoDisponiveis() {
+  if (!R.dados) return [];
+  const col = R.dados.sigitm.c.baixaDefeito;
+  if (!col) return [];
+  const set = new Set();
+  for (const r of R.dados.sigitm.rows) { const v = String(r[col] ?? '').trim(); if (v) set.add(v); }
+  return [...set].sort(collator.compare);
 }
 
 function contagemPorColuna(rows, col, limite = 8) {
@@ -1673,27 +1755,40 @@ async function carregarRelatorios(forcar) {
         endereco: { rows: end, c: cEnd },
       };
     }
+    R.anos = anosDisponiveis();
+    if (R.ano !== 'todos' && !R.anos.includes(+R.ano)) R.ano = 'todos';
+    montarOpcoesAno();
+    R.baixaDefeitoValores = baixaDefeitoDisponiveis();
+    montarOpcoesBaixaDefeito();
     R.carregado = true; R.carregadoEm = new Date();
   } catch (e) { console.error('Erro ao carregar relatórios:', e); R.erro = e; R.carregado = false; }
   R.carregando = false; renderRelatorios();
+}
+
+/* linhas do SIGITM cuja OR já foi criada no SGCI (mesma regra usada em "semOr") */
+function linhasComOrCriada(sig, cs) {
+  if (!cs.orCriada) return [];
+  return sig.filter(r => !/nao possui/.test(norm(String(r[cs.orCriada] ?? ''))));
 }
 
 function calcularKpis() {
   const { rows: sig, c: cs } = linhasSigitmFiltradas();
   const totalSig = sig.length;
   const semOr = cs.orCriada ? sig.filter(r => /nao possui/.test(norm(String(r[cs.orCriada] ?? '')))).length : null;
+  const comOr = cs.orCriada ? totalSig - semOr : null;
   const fechados = cs.status ? sig.filter(r => /fechado/i.test(String(r[cs.status] ?? ''))).length : null;
 
   const { rows: sgci, c: cg } = linhasSgciFiltradas();
   const totalMed = sgci.length;
   const valorPago = cg.valor ? sgci.reduce((s, r) => s + (Number(r[cg.valor]) || 0), 0) : null;
-  const ticketMedio = (valorPago != null && totalMed) ? valorPago / totalMed : null;
+  const orComMedicao = comOr != null ? Math.min(comOr, totalMed) : null;
+  const orSemMedicao = comOr != null ? Math.max(comOr - totalMed, 0) : null;
 
   const endRows = (R.dados && R.dados.endereco.rows) || [], ce = (R.dados && R.dados.endereco.c) || {};
   const totalEnd = endRows.length;
   const repetidos = ce.status ? endRows.filter(r => norm(String(r[ce.status] ?? '')) === 'repetido').length : null;
 
-  return { totalSig, semOr, fechados, totalMed, valorPago, ticketMedio, totalEnd, repetidos };
+  return { totalSig, semOr, comOr, fechados, totalMed, valorPago, orComMedicao, orSemMedicao, totalEnd, repetidos };
 }
 
 function corTema() {
@@ -1731,6 +1826,101 @@ function montarGrafico(id, tipo, labels, valores, opts = {}) {
   });
 }
 
+/* série mensal combinada de duas fontes (ex.: OR criada x medição feita), no mesmo eixo de meses */
+function serieMensalDupla(rowsA, colDataA, rowsB, colDataB) {
+  const mapaA = new Map(), mapaB = new Map();
+  for (const r of rowsA) { const ts = colDataA ? parseData(r[colDataA]) : null; if (ts == null) continue; const k = chaveMes(ts); mapaA.set(k, (mapaA.get(k) || 0) + 1); }
+  for (const r of rowsB) { const ts = colDataB ? parseData(r[colDataB]) : null; if (ts == null) continue; const k = chaveMes(ts); mapaB.set(k, (mapaB.get(k) || 0) + 1); }
+  const chaves = [...new Set([...mapaA.keys(), ...mapaB.keys()])].sort();
+  return { labels: chaves.map(rotuloMes), a: chaves.map(k => mapaA.get(k) || 0), b: chaves.map(k => mapaB.get(k) || 0) };
+}
+function montarGraficoDuasLinhas(id, labels, serieA, serieB, nomeA, nomeB) {
+  const el = document.getElementById(id);
+  if (!el || !window.Chart) return;
+  if (R.charts[id]) R.charts[id].destroy();
+  const t = corTema();
+  R.charts[id] = new Chart(el, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: nomeA, data: serieA, borderColor: '#5aa9ff', backgroundColor: '#5aa9ff', tension: .3, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2, fill: false },
+      { label: nomeB, data: serieB, borderColor: '#34c98a', backgroundColor: '#34c98a', tension: .3, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2, fill: false },
+    ] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks:{ color:t.texto, font:{ size:11 } }, grid:{ display:false } },
+        y: { beginAtZero:true, ticks:{ color:t.texto, font:{ size:11 } }, grid:{ color:t.linha } },
+      },
+    },
+  });
+}
+
+function montarOpcoesAno() {
+  const sel = $('#relAno'); if (!sel) return;
+  sel.innerHTML = '<option value="todos">Todos os anos</option>' + R.anos.map(a => `<option value="${a}">${a}</option>`).join('');
+  sel.value = R.ano;
+}
+function montarOpcoesBaixaDefeito() {
+  if (R.baixaDefeito) {
+    const valido = new Set(R.baixaDefeitoValores);
+    const novo = new Set([...R.baixaDefeito].filter(v => valido.has(v)));
+    R.baixaDefeito = novo.size === R.baixaDefeitoValores.length ? null : novo;
+  }
+  atualizarLabelBaixaDefeito();
+}
+function atualizarLabelBaixaDefeito() {
+  const btn = $('#relBaixaDefeito'); if (!btn) return;
+  const span = $('#relBaixaDefeitoLabel');
+  const sel = R.baixaDefeito;
+  const txt = !sel ? 'Baixa defeito: todos' : sel.size === 0 ? 'Baixa defeito: nenhum' : `Baixa defeito: ${nfmt(sel.size)} selecionado${sel.size > 1 ? 's' : ''}`;
+  if (span) span.textContent = txt;
+  btn.classList.toggle('on', !!sel);
+}
+function fecharPopRel() { const p = $('#popRel'); if (p) p.remove(); }
+function abrirFiltroBaixaDefeito(ancora) {
+  fecharPopRel();
+  const valores = R.baixaDefeitoValores;
+  const pop = document.createElement('div');
+  pop.id = 'popRel'; pop.className = 'pop';
+  pop.innerHTML = `<div class="pop-search"><input class="input" type="search" placeholder="Buscar valor..." aria-label="Buscar valor"></div>
+    <div class="pop-actions"><button data-a="todos">Todos</button><button data-a="nenhum">Nenhum</button></div>
+    <div class="pop-list"></div><div class="pop-foot"></div>`;
+  document.body.appendChild(pop);
+  const r = ancora.getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - 300)) + 'px';
+  pop.style.top = Math.max(8, Math.min(r.bottom + 6, innerHeight - 260)) + 'px';
+  const lista = $('.pop-list', pop), foot = $('.pop-foot', pop), input = $('input', pop);
+  let visiveis = [];
+  const desenhar = () => {
+    const q = norm(input.value);
+    visiveis = q ? valores.filter(v => norm(v).includes(q)) : valores;
+    const sel = R.baixaDefeito;
+    lista.innerHTML = visiveis.map((v, i) =>
+      `<label class="opt"><input type="checkbox" data-i="${i}"${!sel || sel.has(v) ? ' checked' : ''}><span class="v">${esc(v)}</span></label>`).join('')
+      || '<div class="note" style="padding:12px">Nenhum valor encontrado.</div>';
+    foot.textContent = `${nfmt(visiveis.length)} valor(es)`;
+  };
+  desenhar();
+  input.addEventListener('input', debounce(desenhar, 120));
+  lista.addEventListener('change', ev => {
+    const chk = ev.target.closest('input[type="checkbox"]'); if (!chk) return;
+    const v = visiveis[+chk.dataset.i];
+    let set = R.baixaDefeito;
+    if (!set) { set = new Set(valores); R.baixaDefeito = set; }
+    if (chk.checked) set.add(v); else set.delete(v);
+    if (set.size === valores.length) R.baixaDefeito = null;
+    atualizarLabelBaixaDefeito();
+    if (R.carregado) renderRelatorios();
+  });
+  pop.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-a]'); if (!b) return;
+    R.baixaDefeito = b.dataset.a === 'todos' ? null : new Set();
+    atualizarLabelBaixaDefeito(); desenhar();
+    if (R.carregado) renderRelatorios();
+  });
+  input.focus();
+}
 function kpiCardHTML(label, valor, sub) {
   return `<div class="kpi-card"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${valor}</span>${sub ? `<span class="kpi-sub">${esc(sub)}</span>` : ''}</div>`;
 }
@@ -1760,12 +1950,14 @@ function renderRelatorios() {
 
   const k = calcularKpis();
   $('#relKpis').innerHTML = [
-    kpiCardHTML('Chamados SIGITM', nfmt(k.totalSig)),
+    kpiCardHTML('Total de TAs SGTM', nfmt(k.totalSig)),
     kpiCardHTML('Sem OR criada', k.semOr == null ? '—' : nfmt(k.semOr), pct(k.semOr, k.totalSig)),
+    kpiCardHTML('Com OR criada', k.comOr == null ? '—' : nfmt(k.comOr), pct(k.comOr, k.totalSig)),
     kpiCardHTML('Chamados fechados', k.fechados == null ? '—' : nfmt(k.fechados), pct(k.fechados, k.totalSig)),
     kpiCardHTML('Medições SGCI', nfmt(k.totalMed)),
     kpiCardHTML('Valor pago', brl(k.valorPago)),
-    kpiCardHTML('Ticket médio', brl(k.ticketMedio)),
+    kpiCardHTML('ORs com medições feitas', k.orComMedicao == null ? '—' : nfmt(k.orComMedicao), pct(k.orComMedicao, k.comOr)),
+    kpiCardHTML('ORs sem medições feitas', k.orSemMedicao == null ? '—' : nfmt(k.orSemMedicao), pct(k.orSemMedicao, k.comOr)),
     kpiCardHTML('Endereços na fila', nfmt(k.totalEnd)),
     kpiCardHTML('Endereços repetidos', k.repetidos == null ? '—' : nfmt(k.repetidos), pct(k.repetidos, k.totalEnd)),
   ].join('');
@@ -1773,6 +1965,12 @@ function renderRelatorios() {
   const { rows: sig, c: cs } = linhasSigitmFiltradas();
   const { rows: sgci, c: cg } = linhasSgciFiltradas();
   const endRows = (R.dados && R.dados.endereco.rows) || [], ce = (R.dados && R.dados.endereco.c) || {};
+
+  const mDupla = serieMensalDupla(sig, cs.data, sgci, cg.data);
+  montarGraficoDuasLinhas('chOrMedicaoMes', mDupla.labels, mDupla.a, mDupla.b, 'Volume de TA entrante', 'ORs criadas');
+  const legVol = document.querySelector('#viewRelatorios .chart-legend span:first-child');
+  if (legVol) legVol.lastChild.textContent = cs.data ? ` Volume de TA entrante (SIGITM: ${cs.data})` : ' Volume de TA entrante (coluna data_criacao não encontrada no SIGITM)';
+  if (legOr) legOr.lastChild.textContent = cg.data ? ` ORs criadas (SGCI: ${cg.data})` : ' ORs criadas (coluna medicao_data_de_criacao não encontrada no SGCI)';
 
   const m1 = serieMensal(sig, cs.data, null);
   montarGrafico('chSigMes', 'bar', m1.labels, m1.valores, { cor:'#5aa9ff' });
@@ -1800,19 +1998,30 @@ function renderRelatorios() {
    Autenticação
    ===================================================================== */
 function mostrarLogin() {
-  S.user = null;
-  $('#app').hidden = true; $('#login').hidden = false;
+  S.user = null; S.estado = null;
+  $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#scVazio').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
-  R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
+  R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
   E.cache = {}; E.pend = {}; E.tabela = null;
   fecharPop(); fecharDrawer();
 }
 function entrar(user) {
   S.user = user;
-  $('#login').hidden = true; $('#app').hidden = false;
+  $('#login').hidden = true; $('#app').hidden = true; $('#scVazio').hidden = true;
   const email = user.email || '';
   $('#userEmail').textContent = email; $('#userEmail').title = email;
   $('#userAvatar').textContent = (email[0] || '?');
+  mostrarEscolhaEstado();
+}
+function mostrarEscolhaEstado() {
+  S.estado = null;
+  $('#app').hidden = true; $('#scVazio').hidden = true; $('#estadoSelect').hidden = false;
+}
+function escolherEstado(estado) {
+  S.estado = estado;
+  $('#estadoSelect').hidden = true;
+  if (estado === 'SC') { $('#scVazio').hidden = false; return; }
+  $('#app').hidden = false;
   irPara('acoes');
 }
 function msgLogin(texto, ok = false) {
@@ -1873,7 +2082,6 @@ function ligarEventos() {
   $('.nav').addEventListener('click', ev => {
     const b = ev.target.closest('.nav-item'); if (!b) return;
     if (b.dataset.nav === 'acoes') irPara('acoes');
-    else if (b.dataset.nav === 'relatorios') irPara('relatorios');
     else irPara('base', b.dataset.base);
   });
   $('#btnMenu').onclick = () => $('#app').classList.add('nav-open');
@@ -1882,13 +2090,20 @@ function ligarEventos() {
   $('#btnTema').onclick = () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     store.set(LS_TEMA, t); aplicarTema(t);
-    if (S.view === 'relatorios' && R.carregado) renderRelatorios();
   };
 
   /* login */
   $('#loginForm').addEventListener('submit', fazerLogin);
   $('#loginEsqueci').onclick = esqueciSenha;
   $('#formSenha').addEventListener('submit', salvarNovaSenha);
+
+  /* escolha de estado */
+  $('#estadoSelect').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-estado]'); if (b) escolherEstado(b.dataset.estado);
+  });
+  $('#estadoSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
+  $('#scTrocarEstado').onclick = mostrarEscolhaEstado;
+  $('#scSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
 
   /* painel de ações */
   $('#viewAcoes').addEventListener('click', ev => {
@@ -1906,14 +2121,6 @@ function ligarEventos() {
   $('#acBairro').onchange = ev => { A.bairro = ev.target.value; A.limite = 120; refrescarFila(); };
   if ($('#acOrdem')) $('#acOrdem').onchange = ev => { A.ordem = ev.target.value; refrescarFila(); };
   if ($('#acMeus')) $('#acMeus').onclick = () => { A.soMeus = !A.soMeus; $('#acMeus').setAttribute('aria-pressed', String(A.soMeus)); A.limite = 120; refrescarFila(); };
-
-  /* relatórios */
-  $('#viewRelatorios').addEventListener('click', ev => {
-    const alvo = ev.target.closest('[data-act-rel]'); if (!alvo) return;
-    if (alvo.dataset.actRel === 'atualizar') carregarRelatorios(true);
-  });
-  $('#relUf').onchange = ev => { R.uf = ev.target.value; if (R.carregado) renderRelatorios(); };
-  $('#relBaseSgci').onchange = ev => { R.baseSgci = ev.target.value; if (R.carregado) renderRelatorios(); };
 
   /* modal de colunas */
   $('#mdlColunas').addEventListener('click', ev => { if (ev.target === ev.currentTarget || ev.target.closest('[data-close]')) $('#mdlColunas').hidden = true; });
@@ -1954,14 +2161,18 @@ function ligarEventos() {
   };
 
   /* popover: fecha ao clicar fora, rolar ou redimensionar */
-  document.addEventListener('mousedown', ev => { if ($('#pop') && !ev.target.closest('#pop, .fbtn')) fecharPop(); });
-  window.addEventListener('resize', fecharPop);
+  document.addEventListener('mousedown', ev => {
+    if ($('#pop') && !ev.target.closest('#pop, .fbtn')) fecharPop();
+    if ($('#popRel') && !ev.target.closest('#popRel, #relBaixaDefeito')) fecharPopRel();
+  });
+  window.addEventListener('resize', () => { fecharPop(); fecharPopRel(); });
   $('#bWrap').addEventListener('scroll', fecharPop, { passive:true });
 
   /* teclado */
   document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') {
       if (!$('#pop') === false) { fecharPop(); return; }
+      if (!$('#popRel') === false) { fecharPopRel(); return; }
       if (!$('#drawer').hidden) { fecharDrawer(); return; }
       if (!$('#mdlColunas').hidden) { $('#mdlColunas').hidden = true; return; }
       if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { document.activeElement.blur(); return; }

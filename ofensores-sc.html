@@ -35,10 +35,10 @@ body{margin:0;font-family:var(--font-ui);background:var(--bg);color:var(--text);
 .btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text);}
 .btn-purple{background:var(--purple);color:#fff;}
 .btn-theme{background:var(--card);border:1px solid var(--border);color:var(--text);width:36px;padding:0;justify-content:center;font-size:15px;}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:16px;}
-.kpi{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:10px;padding:14px 16px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:10px;padding:12px 12px;overflow:hidden;}
 .kpi .lbl{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;}
-.kpi .val{font-size:24px;font-weight:800;margin-top:6px;}
+.kpi .val{font-size:17px;font-weight:800;margin-top:6px;white-space:nowrap;line-height:1.2;}
 .kpi .sub{font-size:11px;color:var(--muted);margin-top:2px;}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:16px;}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
@@ -149,27 +149,27 @@ tfoot td:not(:first-child){text-align:right;}
     conteudo.appendChild(document.getElementById('tplConteudo').content.cloneNode(true));
 
     const total = rows.length;
-    const campoConcluido = rows.filter(r => (r.status_campo || '').toUpperCase() === 'CONCLUIDO').length;
+    const campoConcluido = rows.filter(r => (r.status_splitter || '').toUpperCase() === 'CONCLUIDO').length;
     document.getElementById('kpiTotal').textContent = total;
     document.getElementById('kpiConcluido').textContent = campoConcluido;
     document.getElementById('kpiConcluidoSub').textContent = total ? `${Math.round(campoConcluido / total * 100)}% do total` : '';
     document.getElementById('kpiPendente').textContent = total - campoConcluido;
-    document.getElementById('kpiCustoMo').textContent = C.brl(C.somaTotal(rows, 'custo_mo'));
-    document.getElementById('kpiCustoMaterial').textContent = C.brl(C.somaTotal(rows, 'custo_material'));
-    document.getElementById('kpiCustoTotal').textContent = C.brl(C.somaTotal(rows, 'valor_orcado'));
-    document.getElementById('kpiFaturado').textContent = C.brl(C.somaTotal(rows, 'valor_faturado'));
+    document.getElementById('kpiCustoMo').textContent = C.brl(C.somaTotal(rows, 'valor_mo'));
+    document.getElementById('kpiCustoMaterial').textContent = C.brl(C.somaTotal(rows, 'valor_material'));
+    document.getElementById('kpiCustoTotal').textContent = C.brl(C.somaTotal(rows, 'valor_total_orcado'));
+    document.getElementById('kpiFaturado').textContent = C.brl(C.somaTotal(rows, 'valor_faturado_total'));
 
-    C.renderBars(document.getElementById('barsCampo'), C.agruparContagem(rows, 'status_campo'));
+    C.renderBars(document.getElementById('barsCampo'), C.agruparContagem(rows, 'status_splitter'));
     C.renderBars(document.getElementById('barsDraft'), C.agruparContagem(rows, 'status_draft'));
     C.renderBars(document.getElementById('barsMedicao'), C.agruparContagem(rows, 'status_medicao'));
 
     const aprovadoHq = rows.filter(r => (r.status_medicao || '') === 'Aprovado HQ');
     C.renderTabelaGrupo(document.getElementById('tabAprovadoHq'),
-      C.agruparSoma(aprovadoHq, 'cluster', ['valor_orcado', 'valor_medido']),
-      [{ campo:'valor_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_medido', rotulo:'Valor Total Medido', moeda:true }]);
+      C.agruparSoma(aprovadoHq, 'cluster', ['valor_total_orcado', 'valor_total_medido']),
+      [{ campo:'valor_total_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_total_medido', rotulo:'Valor Total Medido', moeda:true }]);
     C.renderTabelaGrupo(document.getElementById('tabResumo'),
-      C.agruparSoma(rows, 'cluster', ['valor_orcado', 'valor_medido', 'valor_faturado']),
-      [{ campo:'valor_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_medido', rotulo:'Valor Total Medido', moeda:true }, { campo:'valor_faturado', rotulo:'Valor Faturado Total', moeda:true }]);
+      C.agruparSoma(rows, 'cluster', ['valor_total_orcado', 'valor_total_medido', 'valor_faturado_total']),
+      [{ campo:'valor_total_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_total_medido', rotulo:'Valor Total Medido', moeda:true }, { campo:'valor_faturado_total', rotulo:'Valor Faturado Total', moeda:true }]);
 
     document.getElementById('atualizadoEm').innerHTML = `<span class="pulse"></span>Atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
   }

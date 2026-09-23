@@ -417,6 +417,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
     <nav class="nav">
       <div class="nav-label">Painel</div>
       <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
+      <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>Relatórios</span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -482,6 +483,78 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
           <div id="workspace" class="workspace">
             <div class="queue"><div id="acLista"></div></div>
             <aside id="detalhe" class="detail" aria-live="polite"></aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- Relatórios ---- -->
+    <section id="viewRelatorios" class="view" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Relatórios</h1>
+          <p id="relSub">Carregando...</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn ghost" data-act-rel="atualizar"><i data-i="refresh"></i>Atualizar</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="filters">
+          <select id="relUf" class="select" aria-label="UF"><option value="todos">Todas as UFs</option></select>
+          <select id="relAno" class="select" aria-label="Ano"><option value="todos">Todos os anos</option></select>
+          <select id="relRaiz" class="select" aria-label="TA raiz">
+            <option value="todos">TA raiz: todas</option>
+            <option value="com">Possui TA raiz</option>
+            <option value="sem">Sem TA raiz</option>
+          </select>
+          <select id="relBaseSgci" class="select" aria-label="Base SGCI">
+            <option value="mes_atual">SGCI: mês atual</option>
+            <option value="ate_agosto">SGCI: até agosto/2026</option>
+            <option value="ambas">SGCI: ambas as bases</option>
+          </select>
+          <button id="relBaixaDefeito" class="btn ghost" type="button"><i data-i="sliders"></i><span id="relBaixaDefeitoLabel">Baixa defeito: todos</span></button>
+        </div>
+      </div>
+
+      <div id="relEstado" class="state" hidden></div>
+
+      <div id="relCorpo" style="display:contents">
+        <div id="relKpis" class="kpi-grid"></div>
+        <div class="charts-grid">
+          <div class="chart-card wide">
+            <h3>TA entrante × ORs criadas por mês</h3>
+            <div class="chart-legend"><span><i style="background:#5aa9ff"></i> Volume de TA entrante</span><span><i style="background:#34c98a"></i> ORs criadas</span></div>
+            <div class="chart-wrap"><canvas id="chOrMedicaoMes"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>TAs SIGITM por mês</h3>
+            <div class="chart-wrap"><canvas id="chSigMes"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>TAs por status</h3>
+            <div class="chart-wrap"><canvas id="chSigStatus"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>TAs por tipo de falha</h3>
+            <div class="chart-wrap"><canvas id="chSigFalha"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>TAs por UF</h3>
+            <div class="chart-wrap"><canvas id="chSigUf"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>Valor pago SGCI por mês</h3>
+            <div class="chart-wrap"><canvas id="chSgciMes"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>Valor pago por serviço</h3>
+            <div class="chart-wrap"><canvas id="chSgciServico"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>Endereços por status</h3>
+            <div class="chart-wrap"><canvas id="chEndStatus"></canvas></div>
           </div>
         </div>
       </div>
@@ -788,6 +861,7 @@ const meuNome = () => ((S.user && S.user.email) || '').split('@')[0] || 'eu';
 function irPara(view, base) {
   S.view = view;
   $('#viewAcoes').hidden = view !== 'acoes';
+  $('#viewRelatorios').hidden = view !== 'relatorios';
   $('#viewBase').hidden = view !== 'base';
   $$('.nav-item').forEach(b => {
     const ativo = view === 'base' ? (b.dataset.nav === 'base' && b.dataset.base === base) : b.dataset.nav === view;
@@ -795,9 +869,10 @@ function irPara(view, base) {
   });
   $('#app').classList.remove('nav-open');
   const meta = BASES.find(b => b.id === base);
-  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : (meta ? meta.nome : '');
-  fecharPop(); fecharDrawer();
+  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : view === 'relatorios' ? 'Relatórios' : (meta ? meta.nome : '');
+  fecharPop(); fecharPopRel(); fecharDrawer();
   if (view === 'acoes') { if (!A.carregado && !A.carregando) carregarAcoes(); }
+  else if (view === 'relatorios') { if (!R.carregado && !R.carregando) carregarRelatorios(); }
   else abrirBase(base);
 }
 
@@ -1534,12 +1609,51 @@ function exportarBase() {
 /* =====================================================================
    RELATÓRIOS: KPIs e gráficos (Chart.js), lendo direto do Supabase
    ===================================================================== */
-const R = { carregado:false, carregando:false, carregadoEm:null, erro:null, uf:'todos', baseSgci:'mes_atual', ano:'todos', anos:[], raiz:'todos', baixaDefeito:null, baixaDefeitoValores:[], charts:{}, dados:null };
+const R = { carregado:false, carregando:false, carregadoEm:null, erro:null, uf:'todos', baseSgci:'mes_atual', ano:'todos', anos:[], raiz:'todos', baixaDefeito:null, baixaDefeitoValores:[], baixaDefeitoInicializado:false, charts:{}, dados:null };
 const MESES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const CORES_GRAFICO = ['#ff5a00','#5aa9ff','#34c98a','#f2b632','#9aa5bd','#c084fc','#ff6b6b','#33c2c2','#e879f9','#facc15'];
 const brl = v => v == null ? '—' : Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 });
 
 function canon(s) { return norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+
+/* Lista padrão de códigos/descrições de baixa_defeito (SIGITM) que já vêm pré-selecionados
+   no filtro de Relatórios, conforme solicitado. */
+const DEFEITOS_ENTRANTE = [
+  ['2B84131', 'ABALROAMENTO POR CARGA ALTA'], ['2B84136', 'ABALROAMENTO POR TROCA DE POSTE'],
+  ['2B84132', 'ACIDENTE'], ['2B84142', 'ACIDENTE'],
+  ['2B84115', 'ACOMODAÇÃO EM BANDEJA'], ['2B84125', 'ACOMODAÇÃO EM BANDEJA'],
+  ['2B82112', 'ATAQUE DE FORMIGAS'], ['2B82122', 'ATAQUE DE FORMIGAS'],
+  ['2B82141', 'ATAQUE DE ROEDORES'],
+  ['2B81136', 'CORTE POR LINHA DE PIPA'],
+  ['2B81132', 'CORTE POR TERCEIROS - OBRAS'], ['2B81142', 'CORTE POR TERCEIROS - OBRAS'],
+  ['2B81133', 'CORTE POR TERCEIROS - TROCA DE POSTES'],
+  ['2B84133', 'DEGRADAÇÃO NO ENLACE ÓPTICO'], ['2B84143', 'DEGRADAÇÃO NO ENLACE ÓPTICO'],
+  ['2B83132', 'DESCARGA ELÉTRICA'],
+  ['2B81115', 'FALHA DE MÃO DE OBRA'], ['2B81125', 'FALHA DE MÃO DE OBRA'],
+  ['2B81119', 'FALHA DE MÃO DE OBRA (IMPLANTANÇÃO)'], ['2B81129', 'FALHA DE MÃO DE OBRA (IMPLANTANÇÃO)'],
+  ['2B81114', 'FIBRA QUEBRADA NA CEO / CTO / BEO'], ['2B81124', 'FIBRA QUEBRADA NA CEO / CTO / BEO'],
+  ['2B8113A', 'FURTO DE CABO DE FIBRA'], ['2B8114A', 'FURTO DE CABO DE FIBRA'],
+  ['2B8111B', 'FURTO DE CAIXA DE EMENDA'], ['2B8112B', 'FURTO DE CAIXA DE EMENDA'],
+  ['2B83111', 'INCÊNDIO'], ['2B83121', 'INCÊNDIO'], ['2B83131', 'INCÊNDIO'], ['2B83141', 'INCÊNDIO'],
+  ['2B84154', 'PIG TAIL / CORDÃO - CENTRAL OU CLIENTE'],
+  ['2B81138', 'PODA DE ÁRVORE'],
+  ['2B83133', 'QUEDA DE ÁRVORES'],
+  ['2B81131', 'VANDALISMO'], ['2B81141', 'VANDALISMO'],
+];
+const DEFEITOS_ENTRANTE_CANON = DEFEITOS_ENTRANTE.flatMap(([cod, desc]) => [canon(cod), canon(desc)]);
+function baixaDefeitoNaListaPadrao(valor) {
+  const v = String(valor ?? '').trim();
+  if (!v) return false;
+  const cv = canon(v);
+  return DEFEITOS_ENTRANTE_CANON.some(c => cv === c || cv.includes(c));
+}
+/* Uma TA é "entrante" quando ainda não possui OR criada no SGCI: célula vazia ou com texto
+   indicando "não possui" na coluna possui_or_no_sgci. */
+function taSemOr(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return true;
+  return /nao possui/.test(norm(s));
+}
 /* Converte letra de coluna de planilha (A, B, ..., J, ...) para o nome real da coluna no Supabase.
    Assume que a tabela tem "id" como coluna extra (não faz parte da planilha original) e que as
    demais colunas preservam a ordem original das colunas da planilha (A, B, C, ...). */
@@ -1571,7 +1685,7 @@ function detectarSig(cols) {
     orCriada: acharColuna(cols, [/possui_or_no_sgci/], /atual/),
     data: acharColuna(cols, [/^data_criacao$/, /^data_de_criacao$/]),
     dataMedicao: acharColuna(cols, [/^data_medicao$/, /data_medicao/]),
-    raiz: acharColuna(cols, [/^raiz$/]),
+    raiz: acharColuna(cols, [/^possui_ta_raiz$/, /possui_ta_raiz/, /^raiz$/]),
     baixaDefeito: acharColuna(cols, [/^baixa_defeito$/, /baixa_defeito/]),
   };
 }
@@ -1689,6 +1803,15 @@ function anosDisponiveis() {
   }
   return [...anos].sort((a, b) => b - a);
 }
+/* valores distintos da coluna de UF (SIGITM), para popular o filtro de UF dos relatórios */
+function ufsDisponiveis() {
+  if (!R.dados) return [];
+  const col = R.dados.sigitm.c.uf;
+  if (!col) return [];
+  const set = new Set();
+  for (const r of R.dados.sigitm.rows) { const v = String(r[col] ?? '').trim().toUpperCase(); if (v) set.add(v); }
+  return [...set].sort(collator.compare);
+}
 /* valores distintos da coluna baixa_defeito (SIGITM), para popular o filtro */
 function baixaDefeitoDisponiveis() {
   if (!R.dados) return [];
@@ -1774,7 +1897,13 @@ async function carregarRelatorios(forcar) {
     R.anos = anosDisponiveis();
     if (R.ano !== 'todos' && !R.anos.includes(+R.ano)) R.ano = 'todos';
     montarOpcoesAno();
+    montarOpcoesUf();
     R.baixaDefeitoValores = baixaDefeitoDisponiveis();
+    if (!R.baixaDefeitoInicializado) {
+      const padrao = R.baixaDefeitoValores.filter(baixaDefeitoNaListaPadrao);
+      if (padrao.length) R.baixaDefeito = new Set(padrao);
+      R.baixaDefeitoInicializado = true;
+    }
     montarOpcoesBaixaDefeito();
     R.carregado = true; R.carregadoEm = new Date();
   } catch (e) { console.error('Erro ao carregar relatórios:', e); R.erro = e; R.carregado = false; }
@@ -1784,13 +1913,13 @@ async function carregarRelatorios(forcar) {
 /* linhas do SIGITM cuja OR já foi criada no SGCI (mesma regra usada em "semOr") */
 function linhasComOrCriada(sig, cs) {
   if (!cs.orCriada) return [];
-  return sig.filter(r => !/nao possui/.test(norm(String(r[cs.orCriada] ?? ''))));
+  return sig.filter(r => !taSemOr(r[cs.orCriada]));
 }
 
 function calcularKpis() {
   const { rows: sig, c: cs } = linhasSigitmFiltradas();
   const totalSig = sig.length;
-  const semOr = cs.orCriada ? sig.filter(r => /nao possui/.test(norm(String(r[cs.orCriada] ?? '')))).length : null;
+  const semOr = cs.orCriada ? sig.filter(r => taSemOr(r[cs.orCriada])).length : null;
   const comOr = cs.orCriada ? totalSig - semOr : null;
   const fechados = cs.status ? sig.filter(r => /fechado/i.test(String(r[cs.status] ?? ''))).length : null;
 
@@ -1876,6 +2005,12 @@ function montarOpcoesAno() {
   const sel = $('#relAno'); if (!sel) return;
   sel.innerHTML = '<option value="todos">Todos os anos</option>' + R.anos.map(a => `<option value="${a}">${a}</option>`).join('');
   sel.value = R.ano;
+}
+function montarOpcoesUf() {
+  const sel = $('#relUf'); if (!sel) return;
+  const ufs = ufsDisponiveis();
+  sel.innerHTML = '<option value="todos">Todas as UFs</option>' + ufs.map(u => `<option value="${esc(u)}">${esc(u)}</option>`).join('');
+  sel.value = R.uf;
 }
 function montarOpcoesBaixaDefeito() {
   if (R.baixaDefeito) {
@@ -1982,11 +2117,13 @@ function renderRelatorios() {
   const { rows: sgci, c: cg } = linhasSgciFiltradas();
   const endRows = (R.dados && R.dados.endereco.rows) || [], ce = (R.dados && R.dados.endereco.c) || {};
 
-  const mDupla = serieMensalDupla(sig, cs.data, sgci, cg.data);
+  const sigEntrante = cs.orCriada ? sig.filter(r => taSemOr(r[cs.orCriada])) : sig;
+  const mDupla = serieMensalDupla(sigEntrante, cs.data, sgci, cg.data);
   montarGraficoDuasLinhas('chOrMedicaoMes', mDupla.labels, mDupla.a, mDupla.b, 'Volume de TA entrante', 'ORs criadas');
   const legVol = document.querySelector('#viewRelatorios .chart-legend span:first-child');
-  if (legVol) legVol.lastChild.textContent = cs.data ? ` Volume de TA entrante (SIGITM: ${cs.data})` : ' Volume de TA entrante (coluna data_criacao não encontrada no SIGITM)';
-  if (legOr) legOr.lastChild.textContent = cg.data ? ` ORs criadas (SGCI: ${cg.data})` : ' ORs criadas (coluna medicao_data_de_criacao não encontrada no SGCI)';
+  const legOr = document.querySelector('#viewRelatorios .chart-legend span:last-child');
+  if (legVol) legVol.lastChild.textContent = cs.data ? ` Volume de TA entrante (SIGITM: ${cs.data}, sem OR em ${cs.orCriada || 'possui_or_no_sgci'})` : ' Volume de TA entrante (coluna data_criacao não encontrada no SIGITM)';
+  if (legOr) legOr.lastChild.textContent = cg.data ? ` ORs criadas (SGCI: ${cg.data})` : ' ORs criadas (coluna medicao_data_da_criacao não encontrada no SGCI)';
 
   const m1 = serieMensal(sig, cs.data, null);
   montarGrafico('chSigMes', 'bar', m1.labels, m1.valores, { cor:'#5aa9ff' });
@@ -2017,7 +2154,7 @@ function mostrarLogin() {
   S.user = null; S.estado = null;
   $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#tratativaSelect').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
-  R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
+  R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.uf = 'todos'; R.baseSgci = 'mes_atual'; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; R.baixaDefeitoInicializado = false; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
   E.cache = {}; E.pend = {}; E.tabela = null;
   fecharPop(); fecharDrawer();
 }
@@ -2113,6 +2250,7 @@ function ligarEventos() {
   $('.nav').addEventListener('click', ev => {
     const b = ev.target.closest('.nav-item'); if (!b) return;
     if (b.dataset.nav === 'acoes') irPara('acoes');
+    else if (b.dataset.nav === 'relatorios') irPara('relatorios');
     else irPara('base', b.dataset.base);
   });
   $('#btnMenu').onclick = () => $('#app').classList.add('nav-open');
@@ -2143,6 +2281,17 @@ function ligarEventos() {
   });
   $('#tratTrocarEstado').onclick = mostrarEscolhaEstado;
   $('#tratSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
+
+  /* relatórios */
+  $('#relUf').addEventListener('change', ev => { R.uf = ev.target.value; if (R.carregado) renderRelatorios(); });
+  $('#relAno').addEventListener('change', ev => { R.ano = ev.target.value; if (R.carregado) renderRelatorios(); });
+  $('#relRaiz').addEventListener('change', ev => { R.raiz = ev.target.value; if (R.carregado) renderRelatorios(); });
+  $('#relBaseSgci').addEventListener('change', ev => { R.baseSgci = ev.target.value; if (R.carregado) renderRelatorios(); });
+  $('#relBaixaDefeito').addEventListener('click', ev => abrirFiltroBaixaDefeito(ev.currentTarget));
+  $('#viewRelatorios').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-act-rel]');
+    if (b && b.dataset.actRel === 'atualizar') carregarRelatorios(true);
+  });
 
   /* painel de ações */
   $('#viewAcoes').addEventListener('click', ev => {

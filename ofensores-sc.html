@@ -91,9 +91,11 @@ tfoot td:not(:first-child){text-align:right;}
     <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">TOTAL OFENSORES</div><div class="val" id="kpiTotal">0</div></div>
     <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">CAMPO CONCLUÍDO</div><div class="val" id="kpiConcluido">0</div><div class="sub" id="kpiConcluidoSub"></div></div>
     <div class="kpi" style="border-left-color:#f97316"><div class="lbl">EM EXECUÇÃO / PENDENTE</div><div class="val" id="kpiPendente">0</div></div>
-    <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">CUSTO MO</div><div class="val" id="kpiCustoMo">R$ 0</div></div>
-    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">CUSTO MATERIAL</div><div class="val" id="kpiCustoMaterial">R$ 0</div></div>
-    <div class="kpi" style="border-left-color:#f97316"><div class="lbl">CUSTO TOTAL</div><div class="val" id="kpiCustoTotal">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">VALOR MO</div><div class="val" id="kpiCustoMo">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">VALOR MATERIAL</div><div class="val" id="kpiCustoMaterial">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#f97316"><div class="lbl">VALOR TOTAL ORÇADO</div><div class="val" id="kpiCustoTotal">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">VALOR TOTAL APROVADO</div><div class="val" id="kpiAprovado">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">VALOR TOTAL MEDIDO</div><div class="val" id="kpiMedido">R$ 0</div></div>
     <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">VALOR FATURADO TOTAL</div><div class="val" id="kpiFaturado">R$ 0</div></div>
   </div>
   <div class="grid3">
@@ -149,7 +151,8 @@ tfoot td:not(:first-child){text-align:right;}
     conteudo.appendChild(document.getElementById('tplConteudo').content.cloneNode(true));
 
     const total = rows.length;
-    const campoConcluido = rows.filter(r => (r.status_splitter || '').toUpperCase() === 'CONCLUIDO').length;
+    const normalizarStatus = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+    const campoConcluido = rows.filter(r => normalizarStatus(r.status_splitter) === 'CONCLUIDO').length;
     document.getElementById('kpiTotal').textContent = total;
     document.getElementById('kpiConcluido').textContent = campoConcluido;
     document.getElementById('kpiConcluidoSub').textContent = total ? `${Math.round(campoConcluido / total * 100)}% do total` : '';
@@ -157,6 +160,8 @@ tfoot td:not(:first-child){text-align:right;}
     document.getElementById('kpiCustoMo').textContent = C.brl(C.somaTotal(rows, 'valor_mo'));
     document.getElementById('kpiCustoMaterial').textContent = C.brl(C.somaTotal(rows, 'valor_material'));
     document.getElementById('kpiCustoTotal').textContent = C.brl(C.somaTotal(rows, 'valor_total_orcado'));
+    document.getElementById('kpiAprovado').textContent = C.brl(C.somaTotal(rows.filter(r => (r.status_medicao || '') === 'Aprovado HQ'), 'valor_total_medido'));
+    document.getElementById('kpiMedido').textContent = C.brl(C.somaTotal(rows, 'valor_total_medido'));
     document.getElementById('kpiFaturado').textContent = C.brl(C.somaTotal(rows, 'valor_faturado_total'));
 
     C.renderBars(document.getElementById('barsCampo'), C.agruparContagem(rows, 'status_splitter'));

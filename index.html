@@ -379,27 +379,28 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   </div>
 </div>
 
-<!-- ============ SC (EM BREVE) ============ -->
-<div id="scVazio" class="login" hidden>
+<!-- ============ TRATATIVAS DO ESTADO ============ -->
+<div id="tratativaSelect" class="login" hidden>
   <div class="login-art">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
       <div><div class="brand-name">SGCI</div><div class="brand-sub">SIGITM e SGCI</div></div>
     </div>
     <div>
-      <h1>SC</h1>
-      <p>A base de SC ainda está sendo estruturada.</p>
+      <h1 id="tratativaTitulo">O que você vai tratar?</h1>
+      <p>Escolha a tratativa para continuar.</p>
     </div>
     <span></span>
   </div>
   <div class="login-form-wrap">
     <div class="login-form">
       <div>
-        <h2>Em breve</h2>
-        <p class="muted" style="margin-top:6px">Ainda não há nada por aqui para SC.</p>
+        <h2>Escolher tratativa</h2>
+        <p class="muted" style="margin-top:6px">Você pode trocar de estado depois de entrar.</p>
       </div>
-      <button id="scTrocarEstado" class="btn block" type="button" style="height:42px">Trocar estado</button>
-      <button id="scSair" class="link" type="button" style="justify-self:start">Sair</button>
+      <div id="tratativaBotoes" style="display:grid;gap:10px"></div>
+      <button id="tratTrocarEstado" class="btn block" type="button" style="height:42px">Trocar estado</button>
+      <button id="tratSair" class="link" type="button" style="justify-self:start">Sair</button>
     </div>
   </div>
 </div>
@@ -591,6 +592,19 @@ const BASES = [
   { id:'codigos_de_servico',nome:'Catálogo - Códigos de serviço', desc:'SGCI, códigos de serviço' },
   { id:'endereco_repetido_ext_sgtm', nome:'Base diária extraída para criação de ORs', desc:'Todas as linhas da aba EXT SGTM' },
 ];
+
+/* tratativas disponíveis por estado, mostradas depois da escolha do estado */
+const TRATATIVAS = {
+  'RJ-ES': [
+    { id:'sgci', nome:'SGCI', desc:'Painel completo SIGITM/SGCI', acao: () => {
+      $('#tratativaSelect').hidden = true; $('#app').hidden = false; irPara('acoes');
+    } },
+  ],
+  'SC': [
+    { id:'ofensores-rs', nome:'Ofensores RS', desc:'Relatório gerencial de ofensores — RS', acao: () => { window.location.href = 'ofensores-rs.html'; } },
+    { id:'ofensores-sc', nome:'Ofensores SC', desc:'Relatório gerencial de ofensores — SC', acao: () => { window.location.href = 'ofensores-sc.html'; } },
+  ],
+};
 
 const STATUS = {
   pendente:      { rotulo:'Criar OR',      icone:'clock', tecla:'1', ordem:0 },
@@ -1999,7 +2013,7 @@ function renderRelatorios() {
    ===================================================================== */
 function mostrarLogin() {
   S.user = null; S.estado = null;
-  $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#scVazio').hidden = true; $('#login').hidden = false;
+  $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#tratativaSelect').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
   R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
   E.cache = {}; E.pend = {}; E.tabela = null;
@@ -2007,22 +2021,37 @@ function mostrarLogin() {
 }
 function entrar(user) {
   S.user = user;
-  $('#login').hidden = true; $('#app').hidden = true; $('#scVazio').hidden = true;
+  $('#login').hidden = true; $('#app').hidden = true; $('#tratativaSelect').hidden = true;
   const email = user.email || '';
   $('#userEmail').textContent = email; $('#userEmail').title = email;
   $('#userAvatar').textContent = (email[0] || '?');
-  mostrarEscolhaEstado();
+  const estadoVolta = new URLSearchParams(location.search).get('estado');
+  if (estadoVolta && TRATATIVAS[estadoVolta]) {
+    try { history.replaceState(null, '', location.pathname); } catch {}
+    escolherEstado(estadoVolta);
+  } else {
+    mostrarEscolhaEstado();
+  }
 }
 function mostrarEscolhaEstado() {
   S.estado = null;
-  $('#app').hidden = true; $('#scVazio').hidden = true; $('#estadoSelect').hidden = false;
+  $('#app').hidden = true; $('#tratativaSelect').hidden = true; $('#estadoSelect').hidden = false;
 }
 function escolherEstado(estado) {
   S.estado = estado;
   $('#estadoSelect').hidden = true;
-  if (estado === 'SC') { $('#scVazio').hidden = false; return; }
-  $('#app').hidden = false;
-  irPara('acoes');
+  mostrarTratativas(estado);
+}
+function mostrarTratativas(estado) {
+  const lista = TRATATIVAS[estado] || [];
+  const nomeEstado = { 'RJ-ES':'RJ – ES', 'SC':'SC' }[estado] || estado;
+  $('#tratativaTitulo').textContent = `O que você vai tratar em ${nomeEstado}?`;
+  const box = $('#tratativaBotoes');
+  box.dataset.estado = estado;
+  box.innerHTML = lista.length
+    ? lista.map((t, i) => `<button class="btn ${i === 0 ? 'primary' : ''} block" type="button" data-trat="${esc(t.id)}" style="height:46px;justify-content:flex-start;padding:0 16px">${esc(t.nome)}</button>`).join('')
+    : `<p class="muted">Ainda não há tratativas cadastradas para ${esc(nomeEstado)}.</p>`;
+  $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#tratativaSelect').hidden = false;
 }
 function msgLogin(texto, ok = false) {
   const m = $('#loginMsg'); m.hidden = !texto; m.textContent = texto || ''; m.classList.toggle('ok', ok);
@@ -2102,8 +2131,16 @@ function ligarEventos() {
     const b = ev.target.closest('[data-estado]'); if (b) escolherEstado(b.dataset.estado);
   });
   $('#estadoSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
-  $('#scTrocarEstado').onclick = mostrarEscolhaEstado;
-  $('#scSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
+
+  /* painel de tratativas */
+  $('#tratativaBotoes').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-trat]'); if (!b) return;
+    const estado = $('#tratativaBotoes').dataset.estado;
+    const item = (TRATATIVAS[estado] || []).find(t => t.id === b.dataset.trat);
+    if (item) item.acao();
+  });
+  $('#tratTrocarEstado').onclick = mostrarEscolhaEstado;
+  $('#tratSair').onclick = async () => { await sb.auth.signOut(); mostrarLogin(); };
 
   /* painel de ações */
   $('#viewAcoes').addEventListener('click', ev => {

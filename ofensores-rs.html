@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RELATÓRIO GERENCIAL — OFENSORES (RS)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-ui:"Public Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  color-scheme:dark;
+  --bg:#0b1322; --card:#121c31; --card-2:#182540; --border:#243352; --text:#e7ecf6; --muted:#93a1bd;
+  --purple:#8b7fe8; --green:#34c98a;
+  --thead-bg:#0d1424; --thead-text:#c3cbdd;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f2f4f8; --card:#ffffff; --card-2:#f7f8fb; --border:#e6e8ee; --text:#1f2430; --muted:#8a90a2;
+  --purple:#6d5bd0; --green:#22c55e;
+  --thead-bg:#171a23; --thead-text:#cfd3e0;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font-ui);background:var(--bg);color:var(--text);transition:background .15s,color .15s;}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 24px 60px;}
+.header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+.title-block{display:flex;align-items:flex-start;gap:10px;}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--purple);margin-top:8px;flex-shrink:0;}
+.title h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.2px;font-family:var(--font-display);}
+.title p{margin:2px 0 0;font-size:12.5px;color:var(--muted);}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.updated{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);}
+.updated .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.btn{border:none;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text);}
+.btn-purple{background:var(--purple);color:#fff;}
+.btn-theme{background:var(--card);border:1px solid var(--border);color:var(--text);width:36px;padding:0;justify-content:center;font-size:15px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:16px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:10px;padding:14px 16px;}
+.kpi .lbl{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;}
+.kpi .val{font-size:24px;font-weight:800;margin-top:6px;}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.card h3{font-size:12.5px;font-weight:800;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+.card h3 .sq{width:9px;height:16px;border-radius:2px;background:var(--purple);display:inline-block;}
+.card h3 select{margin-left:auto;font-size:11.5px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);background:var(--card-2);}
+.bar-row{display:grid;grid-template-columns:1fr 2.2fr 34px;align-items:center;gap:10px;margin-bottom:11px;}
+.bar-label{font-size:12px;color:var(--text);}
+.bar-track{height:7px;background:var(--card-2);border-radius:5px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;}
+.bar-value{font-size:12.5px;font-weight:700;text-align:right;}
+.tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{background:var(--thead-bg);color:var(--thead-text);text-align:left;padding:9px 12px;font-weight:700;font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;}
+thead th:not(:first-child){text-align:right;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+tbody td:not(:first-child){text-align:right;}
+tbody tr:first-child td:first-child{color:var(--purple);font-weight:600;}
+tfoot td{padding:10px 12px;font-weight:800;border-top:2px solid var(--thead-bg);color:var(--text);}
+tfoot td:not(:first-child){text-align:right;}
+.card-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:0 0 10px;}
+@media(max-width:640px){.bar-row{grid-template-columns:1fr 1.4fr 30px;}}
+.empty-msg{padding:30px 10px;text-align:center;color:var(--muted);font-size:13px}
+.empty-msg b{color:var(--text)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="ofensores-common.js"></script>
+</head>
+<body><div class="wrap">
+  <div class="header">
+    <div class="title-block">
+      <span class="dot"></span>
+      <div class="title"><h1>RELATÓRIO GERENCIAL — OFENSORES (RS)</h1><p>GPON / Infraestrutura de Fibra — Elementos Ofensores</p></div>
+    </div>
+    <div class="actions">
+      <div class="updated" id="atualizadoEm"><span class="pulse"></span>Carregando…</div>
+      <button class="btn btn-theme" id="btnTema" title="Alternar tema" aria-label="Alternar tema">🌙</button>
+      <button class="btn btn-outline" id="btnVoltar">&larr; VOLTAR AO PAINEL</button>
+      <button class="btn btn-purple" id="btnAtualizar">&#8635; ATUALIZAR</button>
+    </div>
+  </div>
+  <div id="conteudo">
+    <p class="empty-msg">Carregando dados do Supabase…</p>
+  </div>
+</div>
+
+<template id="tplConteudo">
+  <div class="kpis">
+    <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">TOTAL OFENSORES</div><div class="val" id="kpiTotal">0</div></div>
+    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">CAMPO CONCLUÍDO</div><div class="val" id="kpiConcluido">0</div><div class="sub" id="kpiConcluidoSub"></div></div>
+    <div class="kpi" style="border-left-color:#f97316"><div class="lbl">EM EXECUÇÃO / PENDENTE</div><div class="val" id="kpiPendente">0</div></div>
+    <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">CUSTO MO</div><div class="val" id="kpiCustoMo">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#14b8a6"><div class="lbl">CUSTO MATERIAL</div><div class="val" id="kpiCustoMaterial">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#f97316"><div class="lbl">CUSTO TOTAL</div><div class="val" id="kpiCustoTotal">R$ 0</div></div>
+    <div class="kpi" style="border-left-color:#7c3aed"><div class="lbl">VALOR FATURADO TOTAL</div><div class="val" id="kpiFaturado">R$ 0</div></div>
+  </div>
+  <div class="grid3">
+    <div class="card">
+      <h3><span class="sq" style="background:#7c3aed"></span>STATUS CAMPO<select id="equipeFilter"><option value="TODAS">Todas as equipes</option></select></h3>
+      <div id="barsCampo"></div>
+    </div>
+    <div class="card"><h3><span class="sq" style="background:#f97316"></span>STATUS DRAFT</h3><div id="barsDraft"></div></div>
+    <div class="card"><h3><span class="sq" style="background:#14b8a6"></span>STATUS MEDIÇÃO</h3><div id="barsMedicao"></div></div>
+  </div>
+  <div class="tables">
+    <div class="card"><p class="card-title">VALOR MEDIDO — APROVADO HQ</p><div id="tabAprovadoHq" data-chave-rotulo="UF"></div></div>
+    <div class="card"><p class="card-title">RESUMO</p><div id="tabResumo" data-chave-rotulo="UF"></div></div>
+  </div>
+  <div class="tables" style="margin-top:14px">
+    <div class="card"><p class="card-title">RESUMO POR EQUIPE</p><div id="tabEquipe" data-chave-rotulo="Equipe"></div></div>
+  </div>
+</template>
+
+<script>
+(async function () {
+  const C = window.OfensoresComum;
+  const UF = 'RS';
+  const ESTADO_PAINEL = 'SC'; // chave da tratativa no painel principal (index.html)
+  const LS_TEMA = 'sgci_tema';
+  let todasLinhas = [];
+
+  function aplicarTema(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('btnTema').textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+  function temaSalvo() {
+    try { return localStorage.getItem(LS_TEMA) || 'dark'; } catch { return 'dark'; }
+  }
+  aplicarTema(temaSalvo());
+  document.getElementById('btnTema').onclick = () => {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(LS_TEMA, t); } catch {}
+    aplicarTema(t);
+  };
+
+  await C.checarSessao();
+
+  function filtrarPorEquipe(equipe) {
+    if (equipe === 'TODAS') return todasLinhas;
+    return todasLinhas.filter(r => (r.equipe || 'SEM EQUIPE') === equipe);
+  }
+
+  function montarSelectEquipes(rows) {
+    const equipes = [...new Set(rows.map(r => r.equipe || 'SEM EQUIPE'))].sort();
+    const sel = document.getElementById('equipeFilter');
+    sel.innerHTML = '<option value="TODAS">Todas as equipes</option>' +
+      equipes.map(eq => `<option value="${C.esc(eq)}">${C.esc(eq)}</option>`).join('');
+    sel.onchange = () => C.renderBars(document.getElementById('barsCampo'), C.agruparContagem(filtrarPorEquipe(sel.value), 'status_campo'));
+  }
+
+  async function carregar() {
+    document.getElementById('atualizadoEm').innerHTML = '<span class="pulse"></span>Atualizando…';
+    let rows;
+    try {
+      rows = await C.buscarOfensores(UF);
+    } catch (e) {
+      document.getElementById('conteudo').innerHTML = `<p class="empty-msg">Não consegui carregar os dados.<br><b>${C.esc(C.msgErro(e))}</b></p>`;
+      return;
+    }
+    if (!rows.length) {
+      document.getElementById('conteudo').innerHTML = '<p class="empty-msg">Nenhum ofensor cadastrado para RS ainda.</p>';
+      document.getElementById('atualizadoEm').innerHTML = `<span class="pulse"></span>Atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
+      return;
+    }
+    todasLinhas = rows;
+    const conteudo = document.getElementById('conteudo');
+    conteudo.innerHTML = '';
+    conteudo.appendChild(document.getElementById('tplConteudo').content.cloneNode(true));
+
+    const total = rows.length;
+    const campoConcluido = rows.filter(r => (r.status_campo || '').toUpperCase() === 'CONCLUIDO').length;
+    document.getElementById('kpiTotal').textContent = total;
+    document.getElementById('kpiConcluido').textContent = campoConcluido;
+    document.getElementById('kpiConcluidoSub').textContent = total ? `${Math.round(campoConcluido / total * 100)}% do total` : '';
+    document.getElementById('kpiPendente').textContent = total - campoConcluido;
+    document.getElementById('kpiCustoMo').textContent = C.brl(C.somaTotal(rows, 'custo_mo'));
+    document.getElementById('kpiCustoMaterial').textContent = C.brl(C.somaTotal(rows, 'custo_material'));
+    document.getElementById('kpiCustoTotal').textContent = C.brl(C.somaTotal(rows, 'valor_orcado'));
+    document.getElementById('kpiFaturado').textContent = C.brl(C.somaTotal(rows, 'valor_faturado'));
+
+    montarSelectEquipes(rows);
+    C.renderBars(document.getElementById('barsCampo'), C.agruparContagem(rows, 'status_campo'));
+    C.renderBars(document.getElementById('barsDraft'), C.agruparContagem(rows, 'status_draft'));
+    C.renderBars(document.getElementById('barsMedicao'), C.agruparContagem(rows, 'status_medicao'));
+
+    const aprovadoHq = rows.filter(r => (r.status_medicao || '') === 'Aprovado HQ');
+    C.renderTabelaGrupo(document.getElementById('tabAprovadoHq'),
+      C.agruparSoma(aprovadoHq, 'uf', ['valor_orcado', 'valor_medido']),
+      [{ campo:'valor_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_medido', rotulo:'Valor Total Medido', moeda:true }]);
+    C.renderTabelaGrupo(document.getElementById('tabResumo'),
+      C.agruparSoma(rows, 'uf', ['valor_orcado', 'valor_medido', 'valor_faturado']),
+      [{ campo:'valor_orcado', rotulo:'Valor Total Orçado', moeda:true }, { campo:'valor_medido', rotulo:'Valor Total Medido', moeda:true }, { campo:'valor_faturado', rotulo:'Valor Faturado Total', moeda:true }]);
+    C.renderTabelaGrupo(document.getElementById('tabEquipe'),
+      C.agruparSoma(rows.map(r => ({ ...r, equipe: r.equipe || 'SEM EQUIPE' })), 'equipe', ['valor_orcado', 'valor_medido', 'valor_faturado']),
+      [{ campo:'qtd', rotulo:'Qtd' }, { campo:'valor_orcado', rotulo:'Orçado', moeda:true }, { campo:'valor_medido', rotulo:'Medido', moeda:true }, { campo:'valor_faturado', rotulo:'Faturado', moeda:true }]);
+
+    document.getElementById('atualizadoEm').innerHTML = `<span class="pulse"></span>Atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
+  }
+
+  document.getElementById('btnVoltar').onclick = () => { window.location.href = `index.html?estado=${encodeURIComponent(ESTADO_PAINEL)}`; };
+  document.getElementById('btnAtualizar').onclick = carregar;
+
+  carregar();
+})();
+</script>
+</body></html>

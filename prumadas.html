@@ -53,7 +53,19 @@
     --secondary:#7c3aed;
     --accent:#db2777;
     --text-faint:#94a3b8;
+    --text-strong:#0f172a;
     --radius:16px;
+  }
+  [data-theme="dark"]{
+    --bg:#0b1220;
+    --white:#141b2d;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --muted-2:#7c8aa5;
+    --border:#293244;
+    --border-light:#1e2637;
+    --text-faint:#64748b;
+    --text-strong:#f1f5f9;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -63,7 +75,20 @@
     font-family: 'Inter', system-ui, sans-serif;
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+    transition: background .2s ease, color .2s ease;
   }
+  [data-theme="dark"] .status-count-label,
+  [data-theme="dark"] .legend-item,
+  [data-theme="dark"] table.pruma-table tbody td,
+  [data-theme="dark"] .mono,
+  [data-theme="dark"] .repetido-row{ color:#cbd5e1; }
+  [data-theme="dark"] table.pruma-table tbody tr:hover{ background:#1c2338; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb{ background:#334155; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover{ background:#475569; }
+  [data-theme="dark"] .badge-pill{ background:#1e2a4a; color:#a5b4fc; border-color:#334155; }
+  [data-theme="dark"] .table-filters select,
+  [data-theme="dark"] .table-filters input,
+  [data-theme="dark"] .filter-search{ background:var(--white); }
   ::-webkit-scrollbar{ width:6px; height:6px; }
   ::-webkit-scrollbar-track{ background: transparent; }
   ::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:3px; }
@@ -98,22 +123,22 @@
   /* ===== KPI ===== */
   .kpi-bar{ display:flex; flex-wrap:wrap; gap:12px; margin:24px 0 20px; }
   .kpi-card{
-    background:white; border-radius:16px; padding:16px 20px; border:1px solid var(--border);
+    background:var(--white); border-radius:16px; padding:16px 20px; border:1px solid var(--border);
     box-shadow:0 1px 3px rgba(15,23,42,.05); flex:1; min-width:210px; position:relative; overflow:hidden;
   }
   .kpi-card::before{ content:""; position:absolute; top:0; left:0; width:3px; height:100%; border-radius:16px 0 0 16px; background:var(--kpi-accent,#6366f1); }
   .kpi-label{ font-size:11px; font-weight:700; color:var(--muted-2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
-  .kpi-value{ font-size:28px; font-weight:900; color:var(--navy); letter-spacing:-.03em; }
+  .kpi-value{ font-size:28px; font-weight:900; color:var(--text-strong); letter-spacing:-.03em; }
   .kpi-sub{ font-size:11px; color:var(--muted-2); margin-top:4px; }
 
   /* ===== Status breakdown cards (por UF) ===== */
   .status-breakdown-bar{ display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; }
   .status-breakdown-card{
-    background:white; border-radius:16px; padding:16px 20px; border:1px solid var(--border);
+    background:var(--white); border-radius:16px; padding:16px 20px; border:1px solid var(--border);
     box-shadow:0 1px 3px rgba(15,23,42,.05); flex:1; min-width:260px;
   }
   .status-breakdown-title{
-    font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase;
+    font-size:11px; font-weight:800; color:var(--text-strong); text-transform:uppercase;
     letter-spacing:.06em; margin-bottom:12px; display:flex; align-items:center; gap:8px;
   }
   .status-breakdown-title::before{
@@ -126,9 +151,9 @@
   }
   .status-count-track{ flex:1; height:6px; border-radius:3px; background:var(--border-light); overflow:hidden; }
   .status-count-fill{ height:100%; border-radius:3px; }
-  .status-count-val{ flex:0 0 24px; text-align:right; font-size:12px; font-weight:800; color:var(--navy); font-family:monospace; }
+  .status-count-val{ flex:0 0 24px; text-align:right; font-size:12px; font-weight:800; color:var(--text-strong); font-family:monospace; }
   .section-label{
-    font-size:12px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.06em;
+    font-size:12px; font-weight:800; color:var(--text-strong); text-transform:uppercase; letter-spacing:.06em;
     display:flex; align-items:center; gap:8px; margin:0 0 10px;
   }
   .section-label::before{ content:""; width:3px; height:14px; border-radius:2px; background:linear-gradient(180deg,var(--blue),var(--indigo)); display:inline-block; }
@@ -136,9 +161,9 @@
   /* ===== Charts ===== */
   .charts-grid{ display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; margin-bottom:16px; }
   .charts-grid-3{ display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:16px; }
-  .chart-card{ background:white; border-radius:16px; padding:20px; border:1px solid var(--border); box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .chart-card{ background:var(--white); border-radius:16px; padding:20px; border:1px solid var(--border); box-shadow:0 1px 3px rgba(15,23,42,.04); }
   .chart-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:10px; }
-  .chart-title{ font-size:12px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:8px; }
+  .chart-title{ font-size:12px; font-weight:800; color:var(--text-strong); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:8px; }
   .chart-title::before{ content:""; width:3px; height:14px; border-radius:2px; background:linear-gradient(180deg,var(--blue),var(--indigo)); display:inline-block; }
   .chart-sub{ font-size:11px; color:var(--muted-2); margin-top:2px; margin-left:11px; }
   .badge-pill{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; background:#eef2ff; color:var(--indigo); border:1px solid #e0e7ff; white-space:nowrap; }
@@ -148,16 +173,16 @@
   .legend-dot{ width:9px; height:9px; border-radius:3px; flex-shrink:0; }
 
   /* ===== Table ===== */
-  .table-card{ background:white; border-radius:16px; border:1px solid var(--border); box-shadow:0 1px 3px rgba(15,23,42,.04); padding:20px; }
+  .table-card{ background:var(--white); border-radius:16px; border:1px solid var(--border); box-shadow:0 1px 3px rgba(15,23,42,.04); padding:20px; }
   .table-filters{ display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; align-items:center; }
   .table-filters select, .table-filters input{
-    background:white; border:1px solid var(--border); color:var(--text);
+    background:var(--white); border:1px solid var(--border); color:var(--text);
     font-size:12px; padding:8px 12px; border-radius:8px; outline:none; font-family:inherit;
   }
   .table-filters input{ width:260px; }
   .table-filters select:focus, .table-filters input:focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
   .filter-search{
-  background:white; border:1px solid var(--border); color:var(--text);
+  background:var(--white); border:1px solid var(--border); color:var(--text);
   font-size:12px; padding:4px 12px; border-radius:8px; outline:none; font-family:inherit;
   width:200px;
 }
@@ -183,7 +208,7 @@
   .badge-gray{ background:#f1f5f9; color:#64748b; }
 
   /* ===== Resumo: total por UF / ID repetido ===== */
-  .repetido-id{ font-size:22px; font-weight:900; color:var(--navy); letter-spacing:-.02em; }
+  .repetido-id{ font-size:22px; font-weight:900; color:var(--text-strong); letter-spacing:-.02em; }
   .repetido-qtd{ font-size:12px; color:var(--muted-2); margin:4px 0 14px; }
   .repetido-row{ font-size:12.5px; color:#374151; margin-top:7px; }
   .repetido-lbl{ color:var(--muted-2); margin-right:5px; font-weight:600; }
@@ -196,7 +221,22 @@
     .kpi-value{ font-size:24px; }
     .table-filters input{ margin-left:0; width:100%; }
   }
+
+  /* ===== Theme toggle ===== */
+  .theme-toggle{
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+    background:var(--white); color:var(--text); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:16px; transition:.2s; flex-shrink:0;
+  }
+  .theme-toggle:hover{ border-color:var(--primary); color:var(--primary); }
 </style>
+<script>
+  (function(){
+    var saved = localStorage.getItem('prumadas-theme');
+    var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if(theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
 </head>
 <body>
 <div class="header">
@@ -208,6 +248,7 @@
     <div class="header-right">
       <a href="index.html?estado=SC" class="btn-refresh btn-outline" style="text-decoration:none;">&larr; Voltar</a>
       <button class="btn-refresh" id="refreshBtn"><span>&#8635;</span> Atualizar</button>
+      <button class="theme-toggle" id="themeToggle" title="Alternar tema" aria-label="Alternar tema claro/escuro">&#9789;</button>
     </div>
   </div>
 </div>
@@ -586,6 +627,36 @@ const chartDefaults = {
   color: '#64748b',
   gridColor: 'rgba(15,23,42,.06)'
 };
+
+function updateChartDefaultsForTheme(){
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  chartDefaults.color = dark ? '#94a3b8' : '#64748b';
+  chartDefaults.gridColor = dark ? 'rgba(226,232,240,.08)' : 'rgba(15,23,42,.06)';
+}
+
+function setupThemeToggle(){
+  const toggleBtn = document.getElementById('themeToggle');
+  const applyIcon = () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    toggleBtn.innerHTML = dark ? '&#9728;' : '&#9789;';
+  };
+  updateChartDefaultsForTheme();
+  applyIcon();
+  toggleBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(isDark){
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('prumadas-theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('prumadas-theme', 'dark');
+    }
+    applyIcon();
+    updateChartDefaultsForTheme();
+    if(ROWS.length) renderAll(ROWS);
+  });
+}
+setupThemeToggle();
 
 function renderEvolucao(rows){
   const map = {};

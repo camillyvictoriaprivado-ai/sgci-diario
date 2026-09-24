@@ -334,7 +334,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   <div class="login-art">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
-      <div><div class="brand-name">CDI · Portal Centro de Inteligência</div><div class="brand-sub">Manutenção e implantação, num só lugar</div></div>
+      <div><div class="brand-name">CTDI · Portal Centro Técnico de Inteligência</div><div class="brand-sub">Manutenção e implantação, num só lugar</div></div>
     </div>
     <div>
       <h1>Centro de Inteligência</h1>
@@ -363,7 +363,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   <div class="login-art">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
-      <div><div class="brand-name">CDI</div><div class="brand-sub">Centro de Inteligência</div></div>
+      <div><div class="brand-name">CTDI</div><div class="brand-sub">Centro Técnico de Inteligência</div></div>
     </div>
     <div>
       <h1>Qual estado você vai tratar?</h1>
@@ -389,7 +389,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   <div class="login-art">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
-      <div><div class="brand-name">CDI</div><div class="brand-sub">Centro de Inteligência</div></div>
+      <div><div class="brand-name">CTDI</div><div class="brand-sub">Centro Técnico de Inteligência</div></div>
     </div>
     <div>
       <h1 id="tratativaTitulo">O que você vai tratar?</h1>
@@ -417,13 +417,12 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   <aside class="side">
     <div class="brand">
       <div class="brand-mark"><i data-i="pin" data-s="20"></i></div>
-      <div><div class="brand-name">SGCI + SIGITM</div><div class="brand-sub">Central de ORs</div></div>
+      <div><div class="brand-name">CTDI</div><div class="brand-sub">Central de ORs</div></div>
     </div>
     <nav class="nav">
       <div class="nav-label">Painel</div>
-      <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
-      <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>Relatórios</span></button>
-      <button class="nav-item" data-nav="materiais"><i data-i="trending-up"></i><span>Controle de cadastro de materiais, evolução mensal</span></button>
+      <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>KPIs SIGITM x SGCI</span></button>
+      <button class="nav-item" data-nav="materiais"><i data-i="trending-up"></i><span>Controle de cadastro de medições, evolução mensal</span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -2250,7 +2249,7 @@ function montarOpcoesCentro() {
   const sel = $('#matCentro'); if (!sel) return;
   const centros = centrosDisponiveis();
   if (M.centro !== 'todos' && !centros.includes(M.centro)) M.centro = 'todos';
-  sel.innerHTML = '<option value="todos">Selecione o estado</option>' + centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.innerHTML = '<option value="todos">Todos os estados</option>' + centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   sel.value = M.centro;
   sel.disabled = !M.colCentro;
 }

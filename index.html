@@ -578,6 +578,12 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
         </div>
       </div>
 
+      <div class="controls">
+        <div class="filters">
+          <select id="matCentro" class="select" aria-label="Centro telefônico"><option value="todos">Todos os centros telefônicos</option></select>
+        </div>
+      </div>
+
       <div id="matEstado" class="state" hidden></div>
 
       <div id="matCorpo">
@@ -588,7 +594,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div class="chart-wrap"><canvas id="chMatMes"></canvas></div>
           </div>
           <div class="chart-card wide">
-            <h3>Medições realizadas por mês</h3>
+            <h3>PICO DE MEDIÇÕES REALIZADAS POR MÊS</h3>
             <div class="chart-wrap"><canvas id="chMatPicoMedicoes"></canvas></div>
           </div>
         </div>
@@ -2166,6 +2172,7 @@ function renderRelatorios() {
     kpiCardHTML('Medições SGCI', nfmt(k.totalMed)),
     kpiCardHTML('Valor pago', brl(k.valorPago)),
     kpiCardHTML('ORs com medições feitas', k.orComMedicao == null ? '—' : nfmt(k.orComMedicao), pct(k.orComMedicao, k.comOr)),
+    kpiCardHTML('ORs sem medições feitas', k.orSemMedicao == null ? '—' : nfmt(k.orSemMedicao), pct(k.orSemMedicao, k.comOr)),
     kpiCardHTML('Endereços na fila', nfmt(k.totalEnd)),
     kpiCardHTML('Endereços repetidos', k.repetidos == null ? '—' : nfmt(k.repetidos), pct(k.repetidos, k.totalEnd)),
   ].join('');
@@ -2209,7 +2216,7 @@ function renderRelatorios() {
    (base material_fechado: data_de_cadastro_do_material, descricao_do_material, servico)
    ===================================================================== */
 const T_MATERIAL_FECHADO = 'material_fechado';
-const M = { carregado:false, carregando:false, carregadoEm:null, erro:null, dados:null, colServico:null };
+const M = { carregado:false, carregando:false, carregadoEm:null, erro:null, dados:null, colServico:null, colCentro:null, centro:'todos' };
 
 async function carregarMateriais(forcar) {
   if (M.carregando) return;
@@ -2219,14 +2226,38 @@ async function carregarMateriais(forcar) {
     if (!M.dados) {
       const colsMat = await buscarColunasDisponiveis(T_MATERIAL_FECHADO);
       M.colServico = acharColuna(colsMat, [/^servico$/, /^numero_do_servico$/, /^(cod|codigo|id)_servico$/, /servico/]);
-      const campos = ['data_de_cadastro_do_material', 'descricao_do_material', M.colServico].filter(Boolean);
+      M.colCentro = acharColuna(colsMat, [/^centro_telefonico$/, /centro_telefonico/, /^centro$/]);
+      const campos = ['data_de_cadastro_do_material', 'descricao_do_material', M.colServico, M.colCentro].filter(Boolean);
       M.dados = await buscarSelecionado(T_MATERIAL_FECHADO, campos,
         (n, t) => { const el = $('#matEstado'); if (el) el.innerHTML = estadoCarregando(`Carregando materiais... ${nfmt(n)} de ${nfmt(t)}`); });
       if (!M.colServico) toast('Coluna "servico" não encontrada em material_fechado.', 'erro');
+      if (!M.colCentro) toast('Coluna "centro_telefonico" não encontrada em material_fechado.', 'erro');
     }
+    montarOpcoesCentro();
     M.carregado = true; M.carregadoEm = new Date();
   } catch (e) { console.error('Erro ao carregar materiais:', e); M.erro = e; M.carregado = false; }
   M.carregando = false; renderMateriais();
+}
+
+/* filtro de centro telefônico (tela de materiais) */
+function centrosDisponiveis() {
+  if (!M.dados || !M.colCentro) return [];
+  const set = new Set();
+  for (const r of M.dados) { const v = String(r[M.colCentro] ?? '').trim(); if (v) set.add(v); }
+  return [...set].sort(collator.compare);
+}
+function montarOpcoesCentro() {
+  const sel = $('#matCentro'); if (!sel) return;
+  const centros = centrosDisponiveis();
+  if (M.centro !== 'todos' && !centros.includes(M.centro)) M.centro = 'todos';
+  sel.innerHTML = '<option value="todos">Todos os centros telefônicos</option>' + centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value = M.centro;
+  sel.disabled = !M.colCentro;
+}
+function materiaisFiltrados() {
+  if (!M.dados) return [];
+  if (M.centro === 'todos' || !M.colCentro) return M.dados;
+  return M.dados.filter(r => String(r[M.colCentro] ?? '').trim() === M.centro);
 }
 
 /* agrupa os cadastros por mês (chave AAAA-MM); dentro de cada mês conta quantas vezes
@@ -2289,7 +2320,8 @@ function renderMateriais() {
   est.hidden = true; corpo.hidden = false;
   $('#matSub').textContent = `Atualizado às ${pad(M.carregadoEm.getHours())}:${pad(M.carregadoEm.getMinutes())}`;
 
-  const porMes = agregarMateriaisPorMes(M.dados);
+  const dadosMat = materiaisFiltrados();
+  const porMes = agregarMateriaisPorMes(dadosMat);
   const chaves = [...porMes.keys()].sort();
 
   if (!chaves.length) {
@@ -2323,7 +2355,7 @@ function renderMateriais() {
   montarGrafico('chMatMes', 'bar', chaves.map(rotuloMes), chaves.map(k => porMes.get(k).total), { cor:'#5aa9ff' });
 
   /* gráfico 2: pico de medições, contando cada "servico" uma única vez (sem duplicar) */
-  const medUnicas = medicoesUnicasPorMes(M.dados, M.colServico);
+  const medUnicas = medicoesUnicasPorMes(dadosMat, M.colServico);
   const chavesMed = [...medUnicas.keys()].sort();
   const valoresMed = chavesMed.map(k => medUnicas.get(k));
   const maiorMed = valoresMed.length ? Math.max(...valoresMed) : 0;
@@ -2349,7 +2381,7 @@ function mostrarLogin() {
   $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#tratativaSelect').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
   R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.uf = 'todos'; R.baseSgci = 'mes_atual'; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; R.baixaDefeitoInicializado = false; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
-  M.carregado = false; M.carregando = false; M.erro = null; M.dados = null;
+  M.carregado = false; M.carregando = false; M.erro = null; M.dados = null; M.centro = 'todos';
   E.cache = {}; E.pend = {}; E.tabela = null;
   fecharPop(); fecharDrawer();
 }
@@ -2490,6 +2522,7 @@ function ligarEventos() {
   });
 
   /* controle de cadastro de materiais */
+  $('#matCentro').addEventListener('change', ev => { M.centro = ev.target.value; if (M.carregado) renderMateriais(); });
   $('#viewMateriais').addEventListener('click', ev => {
     const b = ev.target.closest('[data-act-mat]');
     if (b && b.dataset.actMat === 'atualizar') carregarMateriais(true);

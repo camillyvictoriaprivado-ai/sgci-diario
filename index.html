@@ -243,6 +243,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 .kpi-value{display:block;font:800 26px/1.15 var(--font-display);letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
 .kpi-sub{display:block;color:var(--faint);font-size:12px;margin-top:2px}
 #relCorpo{flex:1;min-height:0;overflow:auto}
+#matCorpo{flex:1;min-height:0;overflow:auto}
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding-bottom:28px}
 .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px}
 .chart-card.wide{grid-column:1/-1}
@@ -418,6 +419,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
       <div class="nav-label">Painel</div>
       <button class="nav-item" data-nav="acoes"><i data-i="list-checks"></i><span>Criação de ORs</span><span id="navBadge" class="badge" hidden></span></button>
       <button class="nav-item" data-nav="relatorios"><i data-i="bar-chart"></i><span>Relatórios</span></button>
+      <button class="nav-item" data-nav="materiais"><i data-i="trending-up"></i><span>Controle de cadastro de materiais, evolução mensal</span></button>
       <div class="nav-label">Bases</div>
       <div id="navBases"></div>
     </nav>
@@ -560,6 +562,39 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
       </div>
     </section>
 
+    <!-- ---- Controle de cadastro de materiais, evolução mensal ---- -->
+    <section id="viewMateriais" class="view" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Controle de cadastro de materiais, evolução mensal</h1>
+          <p id="matSub">Carregando...</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn ghost" data-act-mat="atualizar"><i data-i="refresh"></i>Atualizar</button>
+        </div>
+      </div>
+
+      <div id="matEstado" class="state" hidden></div>
+
+      <div id="matCorpo" style="display:contents">
+        <div id="matKpis" class="kpi-grid"></div>
+        <div class="charts-grid">
+          <div class="chart-card wide">
+            <h3>Materiais cadastrados por mês</h3>
+            <div class="chart-wrap"><canvas id="chMatMes"></canvas></div>
+          </div>
+        </div>
+        <div class="b-sheet" style="margin-top:2px">
+          <div class="tablewrap">
+            <table class="grid">
+              <thead><tr class="r1"><th>Mês</th><th>Total cadastrado no mês</th><th>Material mais cadastrado no mês</th><th>Qtd. do material no mês</th></tr></thead>
+              <tbody id="matTabelaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ---- Explorador das bases ---- -->
     <section id="viewBase" class="view" hidden>
       <div class="page-head">
@@ -663,6 +698,7 @@ const BASES = [
   { id:'sgci_mes_atual',    nome:'SGCI - Mês atual',     desc:'Mês atual e últimos 2 meses' },
   { id:'sgci_ate_agosto',   nome:'SGCI - Até agosto/2026',    desc:'Base até agosto/2026' },
   { id:'codigos_de_servico',nome:'Catálogo - Códigos de serviço', desc:'SGCI, códigos de serviço' },
+  { id:'codigos_de_material',nome:'Catálogo - Códigos de material', desc:'SGCI, códigos de material' },
   { id:'endereco_repetido_ext_sgtm', nome:'Base diária extraída para criação de ORs', desc:'Todas as linhas da aba EXT SGTM' },
 ];
 
@@ -783,6 +819,7 @@ const ICONS = {
   user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   'list-checks':'<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
   'bar-chart':'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  'trending-up':'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
   database:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   menu:'<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
   sliders:'<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
@@ -862,6 +899,7 @@ function irPara(view, base) {
   S.view = view;
   $('#viewAcoes').hidden = view !== 'acoes';
   $('#viewRelatorios').hidden = view !== 'relatorios';
+  $('#viewMateriais').hidden = view !== 'materiais';
   $('#viewBase').hidden = view !== 'base';
   $$('.nav-item').forEach(b => {
     const ativo = view === 'base' ? (b.dataset.nav === 'base' && b.dataset.base === base) : b.dataset.nav === view;
@@ -869,10 +907,11 @@ function irPara(view, base) {
   });
   $('#app').classList.remove('nav-open');
   const meta = BASES.find(b => b.id === base);
-  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : view === 'relatorios' ? 'Relatórios' : (meta ? meta.nome : '');
+  $('#topTitle').textContent = view === 'acoes' ? 'Endereços repetidos' : view === 'relatorios' ? 'Relatórios' : view === 'materiais' ? 'Controle de cadastro de materiais, evolução mensal' : (meta ? meta.nome : '');
   fecharPop(); fecharPopRel(); fecharDrawer();
   if (view === 'acoes') { if (!A.carregado && !A.carregando) carregarAcoes(); }
   else if (view === 'relatorios') { if (!R.carregado && !R.carregando) carregarRelatorios(); }
+  else if (view === 'materiais') { if (!M.carregado && !M.carregando) carregarMateriais(); }
   else abrirBase(base);
 }
 
@@ -2148,6 +2187,110 @@ function renderRelatorios() {
 }
 
 /* =====================================================================
+   CONTROLE DE CADASTRO DE MATERIAIS, EVOLUÇÃO MENSAL
+   (base material_fechado: colunas data_de_cadastro_do_material e descricao_do_material)
+   ===================================================================== */
+const T_MATERIAL_FECHADO = 'material_fechado';
+const M = { carregado:false, carregando:false, carregadoEm:null, erro:null, dados:null };
+
+async function carregarMateriais(forcar) {
+  if (M.carregando) return;
+  M.carregando = true; M.erro = null; renderMateriais();
+  try {
+    if (forcar) M.dados = null;
+    if (!M.dados) {
+      const rows = await buscarSelecionado(T_MATERIAL_FECHADO, ['data_de_cadastro_do_material', 'descricao_do_material'],
+        (n, t) => { const el = $('#matEstado'); if (el) el.innerHTML = estadoCarregando(`Carregando materiais... ${nfmt(n)} de ${nfmt(t)}`); });
+      M.dados = rows;
+    }
+    M.carregado = true; M.carregadoEm = new Date();
+  } catch (e) { console.error('Erro ao carregar materiais:', e); M.erro = e; M.carregado = false; }
+  M.carregando = false; renderMateriais();
+}
+
+/* agrupa os cadastros por mês (chave AAAA-MM); dentro de cada mês conta quantas vezes
+   aparece cada descrição de material, para achar o mais cadastrado naquele mês */
+function agregarMateriaisPorMes(rows) {
+  const porMes = new Map();
+  for (const r of rows) {
+    const ts = parseData(r.data_de_cadastro_do_material);
+    if (ts == null) continue;
+    const k = chaveMes(ts);
+    const desc = String(r.descricao_do_material ?? '').trim() || '(sem descrição)';
+    if (!porMes.has(k)) porMes.set(k, { total:0, materiais:new Map() });
+    const bloco = porMes.get(k);
+    bloco.total++;
+    bloco.materiais.set(desc, (bloco.materiais.get(desc) || 0) + 1);
+  }
+  return porMes;
+}
+
+function renderMateriais() {
+  const est = $('#matEstado'), corpo = $('#matCorpo');
+  if (M.erro) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = `<div class="empty">${icon('alert', 28)}<h3>Não consegui carregar os materiais</h3>
+      <p>${tabelaInexistente(M.erro) ? `A tabela <b>${esc(T_MATERIAL_FECHADO)}</b> não existe no Supabase. Rode o setup_supabase.sql.` : esc(msgErro(M.erro))}</p>
+      <button class="btn primary" data-act-mat="atualizar">${icon('refresh')}Tentar de novo</button></div>`;
+    return;
+  }
+  if (!M.carregado) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = estadoCarregando('Carregando dados de materiais...');
+    return;
+  }
+  if (!window.Chart) {
+    corpo.hidden = true; est.hidden = false;
+    est.innerHTML = `<div class="empty">${icon('alert', 28)}<h3>Biblioteca de gráficos não carregou</h3><p>Verifique a conexão com a internet e recarregue a página.</p></div>`;
+    return;
+  }
+  est.hidden = true; corpo.hidden = false;
+  $('#matSub').textContent = `Atualizado às ${pad(M.carregadoEm.getHours())}:${pad(M.carregadoEm.getMinutes())}`;
+
+  const porMes = agregarMateriaisPorMes(M.dados);
+  const chaves = [...porMes.keys()].sort();
+
+  if (!chaves.length) {
+    $('#matKpis').innerHTML = '';
+    montarGrafico('chMatMes', 'bar', [], [], { cor:'#5aa9ff' });
+    $('#matTabelaBody').innerHTML = `<tr><td class="none" colspan="4">Nenhum cadastro com data válida encontrado em ${esc(T_MATERIAL_FECHADO)}.</td></tr>`;
+    return;
+  }
+
+  /* mês com mais cadastros no total (pico) */
+  let mesPico = chaves[0];
+  for (const k of chaves) if (porMes.get(k).total > porMes.get(mesPico).total) mesPico = k;
+
+  /* material mais cadastrado somando todos os meses */
+  const totalGeral = new Map();
+  for (const k of chaves) for (const [desc, qtd] of porMes.get(k).materiais) totalGeral.set(desc, (totalGeral.get(desc) || 0) + qtd);
+  let materialTop = null, materialTopQtd = 0;
+  for (const [desc, qtd] of totalGeral) if (qtd > materialTopQtd) { materialTop = desc; materialTopQtd = qtd; }
+
+  const totalCadastros = chaves.reduce((s, k) => s + porMes.get(k).total, 0);
+
+  $('#matKpis').innerHTML = [
+    kpiCardHTML('Total de cadastros', nfmt(totalCadastros)),
+    kpiCardHTML('Meses analisados', nfmt(chaves.length)),
+    kpiCardHTML('Mês de pico de cadastros', rotuloMes(mesPico), `${nfmt(porMes.get(mesPico).total)} cadastros`),
+    kpiCardHTML('Material mais cadastrado (geral)', materialTop || '—', materialTop ? `${nfmt(materialTopQtd)} cadastros` : ''),
+  ].join('');
+
+  const labels = chaves.map(rotuloMes);
+  const valores = chaves.map(k => porMes.get(k).total);
+  montarGrafico('chMatMes', 'bar', labels, valores, { cor:'#5aa9ff' });
+
+  $('#matTabelaBody').innerHTML = chaves.map(k => {
+    const bloco = porMes.get(k);
+    let top = null, topQtd = 0;
+    for (const [desc, qtd] of bloco.materiais) if (qtd > topQtd) { top = desc; topQtd = qtd; }
+    const pico = k === mesPico;
+    const rotulo = esc(rotuloMes(k)) + (pico ? ' <b style="color:var(--accent-ink)">(mês de pico)</b>' : '');
+    return `<tr><td>${rotulo}</td><td>${nfmt(bloco.total)}</td><td>${esc(top || '—')}</td><td>${nfmt(topQtd)}</td></tr>`;
+  }).join('');
+}
+
+/* =====================================================================
    Autenticação
    ===================================================================== */
 function mostrarLogin() {
@@ -2155,6 +2298,7 @@ function mostrarLogin() {
   $('#app').hidden = true; $('#estadoSelect').hidden = true; $('#tratativaSelect').hidden = true; $('#login').hidden = false;
   A.rows = []; A.grupos = []; A.porChave = new Map(); A.trat = {}; A.carregado = false; A.carregando = false; A.sel = null; A.erro = null;
   R.carregado = false; R.carregando = false; R.erro = null; R.dados = null; R.uf = 'todos'; R.baseSgci = 'mes_atual'; R.ano = 'todos'; R.anos = []; R.raiz = 'todos'; R.baixaDefeito = null; R.baixaDefeitoValores = []; R.baixaDefeitoInicializado = false; Object.values(R.charts).forEach(c => c.destroy()); R.charts = {};
+  M.carregado = false; M.carregando = false; M.erro = null; M.dados = null;
   E.cache = {}; E.pend = {}; E.tabela = null;
   fecharPop(); fecharDrawer();
 }
@@ -2251,6 +2395,7 @@ function ligarEventos() {
     const b = ev.target.closest('.nav-item'); if (!b) return;
     if (b.dataset.nav === 'acoes') irPara('acoes');
     else if (b.dataset.nav === 'relatorios') irPara('relatorios');
+    else if (b.dataset.nav === 'materiais') irPara('materiais');
     else irPara('base', b.dataset.base);
   });
   $('#btnMenu').onclick = () => $('#app').classList.add('nav-open');
@@ -2291,6 +2436,12 @@ function ligarEventos() {
   $('#viewRelatorios').addEventListener('click', ev => {
     const b = ev.target.closest('[data-act-rel]');
     if (b && b.dataset.actRel === 'atualizar') carregarRelatorios(true);
+  });
+
+  /* controle de cadastro de materiais */
+  $('#viewMateriais').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-act-mat]');
+    if (b && b.dataset.actMat === 'atualizar') carregarMateriais(true);
   });
 
   /* painel de ações */

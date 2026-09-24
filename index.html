@@ -247,15 +247,16 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 #matCorpo .b-sheet{flex:none;margin-top:2px;margin-bottom:28px;border-bottom:1px solid var(--line);border-radius:var(--r-lg)}
 #matCorpo .tablewrap{flex:none;max-height:520px}
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding-bottom:28px}
-.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px}
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0}
 .chart-card.wide{grid-column:1/-1}
 .chart-legend{display:flex;gap:16px;flex-wrap:wrap}
 .chart-legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600}
 .chart-legend i{width:10px;height:10px;border-radius:3px;flex:none}
 .chart-card h3{font:700 14.5px var(--font-display);letter-spacing:-.01em}
-.chart-wrap{position:relative;flex:1;min-height:230px}
+.chart-wrap{position:relative;flex:none;height:250px}
+.chart-card.wide .chart-wrap{height:300px}
 .chart-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
-@media (max-width:900px){overflow:visible}.charts-grid{grid-template-columns:1fr}
+@media (max-width:900px){.charts-grid{grid-template-columns:1fr}}
 
 /* popover / modal / drawer / toast */
 .pop{position:fixed;z-index:95;width:290px;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow)}
@@ -316,6 +317,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
   .filters{width:100%}
   .filters .select{flex:1;max-width:none}
   .b-sheet{min-height:70vh}
+  #matCorpo{overflow:visible}
   .login{grid-template-columns:1fr}
   .login-art{display:none}
 }
@@ -586,7 +588,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div class="chart-wrap"><canvas id="chMatMes"></canvas></div>
           </div>
           <div class="chart-card wide">
-            <h3>PICO DE MEDIÇÕES REALIZADAS POR MÊS</h3>
+            <h3>Medições realizadas por mês</h3>
             <div class="chart-wrap"><canvas id="chMatPicoMedicoes"></canvas></div>
           </div>
         </div>
@@ -2164,7 +2166,6 @@ function renderRelatorios() {
     kpiCardHTML('Medições SGCI', nfmt(k.totalMed)),
     kpiCardHTML('Valor pago', brl(k.valorPago)),
     kpiCardHTML('ORs com medições feitas', k.orComMedicao == null ? '—' : nfmt(k.orComMedicao), pct(k.orComMedicao, k.comOr)),
-    kpiCardHTML('ORs sem medições feitas', k.orSemMedicao == null ? '—' : nfmt(k.orSemMedicao), pct(k.orSemMedicao, k.comOr)),
     kpiCardHTML('Endereços na fila', nfmt(k.totalEnd)),
     kpiCardHTML('Endereços repetidos', k.repetidos == null ? '—' : nfmt(k.repetidos), pct(k.repetidos, k.totalEnd)),
   ].join('');

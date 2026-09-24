@@ -243,7 +243,9 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 .kpi-value{display:block;font:800 26px/1.15 var(--font-display);letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
 .kpi-sub{display:block;color:var(--faint);font-size:12px;margin-top:2px}
 #relCorpo{flex:1;min-height:0;overflow:auto}
-#matCorpo{flex:1;min-height:0;overflow:auto}
+#matCorpo{flex:1;min-height:0;overflow:auto;display:block}
+#matCorpo .b-sheet{flex:none;margin-top:2px;margin-bottom:28px;border-bottom:1px solid var(--line);border-radius:var(--r-lg)}
+#matCorpo .tablewrap{flex:none;max-height:520px}
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding-bottom:28px}
 .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px}
 .chart-card.wide{grid-column:1/-1}
@@ -253,7 +255,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 .chart-card h3{font:700 14.5px var(--font-display);letter-spacing:-.01em}
 .chart-wrap{position:relative;flex:1;min-height:230px}
 .chart-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
-@media (max-width:900px){.charts-grid{grid-template-columns:1fr}}
+@media (max-width:900px){overflow:visible}.charts-grid{grid-template-columns:1fr}
 
 /* popover / modal / drawer / toast */
 .pop{position:fixed;z-index:95;width:290px;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow)}
@@ -576,12 +578,16 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
 
       <div id="matEstado" class="state" hidden></div>
 
-      <div id="matCorpo" style="display:contents">
+      <div id="matCorpo">
         <div id="matKpis" class="kpi-grid"></div>
         <div class="charts-grid">
           <div class="chart-card wide">
             <h3>Materiais cadastrados por mês</h3>
             <div class="chart-wrap"><canvas id="chMatMes"></canvas></div>
+          </div>
+          <div class="chart-card wide">
+            <h3>PICO DE MEDIÇÕES REALIZADAS POR MÊS</h3>
+            <div class="chart-wrap"><canvas id="chMatPicoMedicoes"></canvas></div>
           </div>
         </div>
         <div class="b-sheet" style="margin-top:2px">
@@ -1872,12 +1878,23 @@ function contagemPorColuna(rows, col, limite = 8) {
 }
 function somaPorColuna(rows, colGrupo, colValor, limite = 8) {
   if (!colGrupo || !colValor) return { labels:[], valores:[] };
+  /* agrupa pela versão normalizada (sem acento, minúsculo, espaços colapsados) para não duplicar
+     o mesmo serviço por causa de variação de acento/caixa/espaço; mantém o rótulo mais legível */
   const mapa = new Map();
-  for (const r of rows) { const v = String(r[colGrupo] ?? '').trim() || '(vazio)'; mapa.set(v, (mapa.get(v) || 0) + (Number(r[colValor]) || 0)); }
-  const entradas = [...mapa.entries()].sort((a, b) => b[1] - a[1]);
-  const top = entradas.slice(0, limite), resto = entradas.slice(limite).reduce((s, [, n]) => s + n, 0);
-  if (resto) top.push(['Outros', resto]);
-  return { labels: top.map(x => x[0]), valores: top.map(x => Math.round(x[1])) };
+  for (const r of rows) {
+    const bruto = String(r[colGrupo] ?? '').trim().replace(/\s+/g, ' ');
+    const label = bruto || '(vazio)';
+    const chave = norm(label);
+    const atual = mapa.get(chave);
+    const valor = Number(r[colValor]) || 0;
+    if (atual) atual.valor += valor;
+    else mapa.set(chave, { label, valor });
+  }
+  const entradas = [...mapa.values()].sort((a, b) => b.valor - a.valor);
+  const top = entradas.slice(0, limite), resto = entradas.slice(limite).reduce((s, x) => s + x.valor, 0);
+  const labels = top.map(x => x.label), valores = top.map(x => Math.round(x.valor));
+  if (resto) { labels.push('Outros'); valores.push(Math.round(resto)); }
+  return { labels, valores };
 }
 function serieMensal(rows, colData, colValor) {
   const mapa = new Map();
@@ -2188,10 +2205,10 @@ function renderRelatorios() {
 
 /* =====================================================================
    CONTROLE DE CADASTRO DE MATERIAIS, EVOLUÇÃO MENSAL
-   (base material_fechado: colunas data_de_cadastro_do_material e descricao_do_material)
+   (base material_fechado: data_de_cadastro_do_material, descricao_do_material, servico)
    ===================================================================== */
 const T_MATERIAL_FECHADO = 'material_fechado';
-const M = { carregado:false, carregando:false, carregadoEm:null, erro:null, dados:null };
+const M = { carregado:false, carregando:false, carregadoEm:null, erro:null, dados:null, colServico:null };
 
 async function carregarMateriais(forcar) {
   if (M.carregando) return;
@@ -2199,9 +2216,12 @@ async function carregarMateriais(forcar) {
   try {
     if (forcar) M.dados = null;
     if (!M.dados) {
-      const rows = await buscarSelecionado(T_MATERIAL_FECHADO, ['data_de_cadastro_do_material', 'descricao_do_material'],
+      const colsMat = await buscarColunasDisponiveis(T_MATERIAL_FECHADO);
+      M.colServico = acharColuna(colsMat, [/^servico$/, /^numero_do_servico$/, /^(cod|codigo|id)_servico$/, /servico/]);
+      const campos = ['data_de_cadastro_do_material', 'descricao_do_material', M.colServico].filter(Boolean);
+      M.dados = await buscarSelecionado(T_MATERIAL_FECHADO, campos,
         (n, t) => { const el = $('#matEstado'); if (el) el.innerHTML = estadoCarregando(`Carregando materiais... ${nfmt(n)} de ${nfmt(t)}`); });
-      M.dados = rows;
+      if (!M.colServico) toast('Coluna "servico" não encontrada em material_fechado.', 'erro');
     }
     M.carregado = true; M.carregadoEm = new Date();
   } catch (e) { console.error('Erro ao carregar materiais:', e); M.erro = e; M.carregado = false; }
@@ -2221,6 +2241,27 @@ function agregarMateriaisPorMes(rows) {
     const bloco = porMes.get(k);
     bloco.total++;
     bloco.materiais.set(desc, (bloco.materiais.get(desc) || 0) + 1);
+  }
+  return porMes;
+}
+
+/* Conta medições ÚNICAS por mês: cada valor de "servico" entra uma só vez,
+   no mês da sua primeira data. Linhas repetidas do mesmo serviço não somam. */
+function medicoesUnicasPorMes(rows, colServico) {
+  const primeira = new Map(); // servico normalizado -> menor timestamp
+  if (colServico) {
+    for (const r of rows) {
+      const sv = norm(r[colServico]);
+      if (!sv) continue;
+      const ts = parseData(r.data_de_cadastro_do_material);
+      if (ts == null) continue;
+      if (!primeira.has(sv) || ts < primeira.get(sv)) primeira.set(sv, ts);
+    }
+  }
+  const porMes = new Map();
+  for (const ts of primeira.values()) {
+    const k = chaveMes(ts);
+    porMes.set(k, (porMes.get(k) || 0) + 1);
   }
   return porMes;
 }
@@ -2253,6 +2294,7 @@ function renderMateriais() {
   if (!chaves.length) {
     $('#matKpis').innerHTML = '';
     montarGrafico('chMatMes', 'bar', [], [], { cor:'#5aa9ff' });
+    montarGrafico('chMatPicoMedicoes', 'bar', [], [], { cor:'#5aa9ff' });
     $('#matTabelaBody').innerHTML = `<tr><td class="none" colspan="4">Nenhum cadastro com data válida encontrado em ${esc(T_MATERIAL_FECHADO)}.</td></tr>`;
     return;
   }
@@ -2276,17 +2318,25 @@ function renderMateriais() {
     kpiCardHTML('Material mais cadastrado (geral)', materialTop || '—', materialTop ? `${nfmt(materialTopQtd)} cadastros` : ''),
   ].join('');
 
-  const labels = chaves.map(rotuloMes);
-  const valores = chaves.map(k => porMes.get(k).total);
-  montarGrafico('chMatMes', 'bar', labels, valores, { cor:'#5aa9ff' });
+  /* gráfico 1: cadastros por mês */
+  montarGrafico('chMatMes', 'bar', chaves.map(rotuloMes), chaves.map(k => porMes.get(k).total), { cor:'#5aa9ff' });
 
+  /* gráfico 2: pico de medições, contando cada "servico" uma única vez (sem duplicar) */
+  const medUnicas = medicoesUnicasPorMes(M.dados, M.colServico);
+  const chavesMed = [...medUnicas.keys()].sort();
+  const valoresMed = chavesMed.map(k => medUnicas.get(k));
+  const maiorMed = valoresMed.length ? Math.max(...valoresMed) : 0;
+  montarGrafico('chMatPicoMedicoes', 'bar', chavesMed.map(rotuloMes), valoresMed,
+    { cor: valoresMed.map(v => v === maiorMed ? '#ff5a00' : '#5aa9ff') });
+
+  /* tabela mensal */
   $('#matTabelaBody').innerHTML = chaves.map(k => {
     const bloco = porMes.get(k);
     let top = null, topQtd = 0;
     for (const [desc, qtd] of bloco.materiais) if (qtd > topQtd) { top = desc; topQtd = qtd; }
     const pico = k === mesPico;
-    const rotulo = esc(rotuloMes(k)) + (pico ? ' <b style="color:var(--accent-ink)">(mês de pico)</b>' : '');
-    return `<tr><td>${rotulo}</td><td>${nfmt(bloco.total)}</td><td>${esc(top || '—')}</td><td>${nfmt(topQtd)}</td></tr>`;
+    const rot = esc(rotuloMes(k)) + (pico ? ' <b style="color:var(--accent-ink)">(mês de pico)</b>' : '');
+    return `<tr><td>${rot}</td><td>${nfmt(bloco.total)}</td><td>${esc(top || '—')}</td><td>${nfmt(topQtd)}</td></tr>`;
   }).join('');
 }
 

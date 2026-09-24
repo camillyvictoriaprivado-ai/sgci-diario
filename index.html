@@ -594,7 +594,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:max-content;min-width
             <div class="chart-wrap"><canvas id="chMatMes"></canvas></div>
           </div>
           <div class="chart-card wide">
-            <h3>PICO DE MEDIÇÕES REALIZADAS POR MÊS</h3>
+            <h3>Medições realizadas por mês</h3>
             <div class="chart-wrap"><canvas id="chMatPicoMedicoes"></canvas></div>
           </div>
         </div>
@@ -2250,7 +2250,7 @@ function montarOpcoesCentro() {
   const sel = $('#matCentro'); if (!sel) return;
   const centros = centrosDisponiveis();
   if (M.centro !== 'todos' && !centros.includes(M.centro)) M.centro = 'todos';
-  sel.innerHTML = '<option value="todos">Todos os centros telefônicos</option>' + centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.innerHTML = '<option value="todos">Selecione o estado</option>' + centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   sel.value = M.centro;
   sel.disabled = !M.colCentro;
 }
